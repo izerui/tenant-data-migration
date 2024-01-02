@@ -2,7 +2,4 @@
 
 pip config set global.index-url https://mirror.baidu.com/pypi/simple/
 
-* `pip install pymysql`
-* `pip install pandas`
-* `pip install SQLAlchemy`
-* `pip install tqdm`
+* `pip install pymysql pandas SQLAlchemy tqdm`
