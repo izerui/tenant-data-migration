@@ -39,7 +39,8 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         databases_rds01 = ['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
                            'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
                            'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
-                           'unicom', 'workflow', 'wx_applet']
+                           'unicom', 'wx_applet']
+
         # 要导入的目的mysql
         self.target_host = config.get('target_mysql', 'host')
         self.target_port = config.get('target_mysql', 'port')
