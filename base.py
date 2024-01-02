@@ -9,7 +9,7 @@ from pymysql import DatabaseError, MySQLError
 from tqdm import tqdm
 
 from sink import Mysql
-from utils import logger
+from utils import logger, log_time
 
 
 class BaseExport:
@@ -104,7 +104,14 @@ class BaseExport:
             else:
                 count_sql = f"/** 导出数量 **/ select count(0) from `{database}`.`{source_table}` where ent_code = '{ent_code}'"
                 query_sql = f"/** 导出数据 **/ select * from `{database}`.`{source_table}` where ent_code = '{ent_code}'"
-                self.source.from_sql_to_csv(count_sql, query_sql, database=database, csv_file=csv_file)
+
+                def chunk_callback(item):
+                    # 替换bit类型的 b'\x00' 值为0
+                    item = item.map(lambda x: x[0] if type(x) is bytes else x)
+                    return item
+
+                self.source.from_sql_to_csv(count_sql, query_sql, database=database, csv_file=csv_file,
+                                            chunk_callback=chunk_callback)
 
     def export_parallel(self, ent_code):
         """
@@ -325,6 +332,7 @@ class BaseSync:
         """
         return df
 
+    @log_time
     def __create_database_if_not_exists(self, database):
         """
         自动判断是否创建目标库
@@ -338,21 +346,62 @@ class BaseSync:
         except BaseException as e:
             raise DatabaseError(f'【{database}】错误: {repr(e)}')
 
-    def __create_table_if_not_exists(self, database, table):
+    @log_time
+    def __create_database_tables_if_not_exists(self, database, tables):
         """
-        自动判断是否创建目标表
+        创建目标表
+        :param database:
+        :param tables:
+        :return:
+        """
+        try:
+            # 重建目标库
+            self.__create_database_if_not_exists(database)
+
+            # 如果文件存在则使用sql文件创建
+            create_tables_sql_file = os.path.join('tables', 'create', f'{database}.sql')
+            if os.path.exists(create_tables_sql_file):
+                with open(create_tables_sql_file, 'r') as f:
+                    sql = f.read()
+                    self.target.execute_update(sql, database, '从文件创建目标表...')
+            else:
+                # 重建目标表
+                table_create_sqls = []
+                for table in tables:
+                    create_sql = self.source.get_table_create_sql(table, database)
+                    create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
+                    create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
+                    table_create_sqls.append(create_sql)
+                self.target.execute_updates(table_create_sqls, database, '创建目标表...')
+        except BaseException as e:
+            raise MySQLError(f'create error: 【{database}】 {repr(e)}')
+
+    @log_time
+    def return_before_handle_data(self, database, table):
+        """
+        数据前置处理器
         :param database:
         :param table:
         :return:
         """
-        try:
-            create_sql = self.source.get_table_create_sql(table, database)
-            create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
-            create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
-            self.target.execute_update(create_sql, database)
-        except BaseException as e:
-            raise MySQLError(f'create table error: 【{database}.{table}】 {repr(e)}')
+        # 记录索引
+        index_alert_sqls = self.target.get_table_index_alert_sqls(database, table)
+        # 导入前删除索引
+        index_drop_sqls = self.target.get_table_index_drop_sql(database, table)
+        if index_drop_sqls:
+            for index_drop in index_drop_sqls:
+                self.target.execute_update(index_drop, database=database)
+        return index_alert_sqls
 
+    @log_time
+    def after_handle_data(self, database, table, before_return_result):
+        # 导入后恢复索引
+        if before_return_result:
+            for index_alert in before_return_result:
+                self.target.execute_update(index_alert, database)
+        pass
+
+    @log_time
     def _sync_database_table(self, database, table, ent_code, is_test=False):
         """
         同步源库下的表数据到目标库下
@@ -372,23 +421,15 @@ class BaseSync:
             if not matcher:
                 return
 
-        # 同步前先清空目标表数据
-        # self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
-
         # 读取到数据分批写入到目标表
         def from_chunk_to_target_table(chunk: DataFrame):
             chunk = self.chunk_wrapper(chunk, database, table, True)
-            chunk.to_sql(table, schema=database, con=self.target.get_engine(database), if_exists='append',
+            chunk.to_sql(table, schema=database, con=self.target.get_engine(), if_exists='append',
                          index=False)
             pass
 
-        # 记录索引
-        index_alert_sqls = self.target.get_table_index_alert_sqls(database, table)
-        # 导入前删除索引
-        index_drop_sqls = self.target.get_table_index_drop_sql(database, table)
-        if index_drop_sqls:
-            for index_drop in index_drop_sqls:
-                self.target.execute_update(index_drop, database=database)
+        # 前置处理器获取目标表的索引
+        index_alert_sqls = self.return_before_handle_data(database, table)
 
         # 测试的话，只同步前10条记录
         if is_test:
@@ -405,12 +446,14 @@ class BaseSync:
                 query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
                 self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
-        # 导入后恢复索引
-        if index_alert_sqls:
-            for index_alert in index_alert_sqls:
-                self.target.execute_update(index_alert, database)
+        self.after_handle_data(database, table, index_alert_sqls)
         pass
 
+    @abstractmethod
+    def get_database_create_sql(self, database):
+        return ''
+
+    @log_time
     def sync_parallel(self, ent_code, is_test=False):
         """
         并行同步实例下的多个数据库表数据
@@ -427,35 +470,35 @@ class BaseSync:
             tbl_count += len(tables)
             db_map[f'{database}'] = tables
 
+        # 同步结构
+        for database in db_map.keys():
+            # 工作流因为有有关联关系，创建表有问题，故保留跳过创建结构
+            if database == 'workflow':
+                continue
+            # 先重建目标数据库结构
+            logger.info(f'【{database}】删除重建。。。')
+            self.target.execute_update(f'drop database if exists {database}')
+            self.__create_database_tables_if_not_exists(database, db_map[database])
+
+        # 同步数据
         import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的数据处理进度')
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             futures = []
-            for index, db in enumerate(self.databases):
 
-                # 同步入口方法
-                def sync_database(database, table):
-                    try:
-                        # 判断库存在
-                        self.__create_database_if_not_exists(database)
+            # 同步入口方法
+            def sync_database(database, table):
+                try:
+                    # 开始同步数据
+                    self._sync_database_table(database, table, ent_code, is_test=is_test)
+                except BaseException as e:
+                    logger.error(f"【同步失败】{database}.{table}", e)
 
-                        # 判断表存在
-                        self.__create_table_if_not_exists(database, table)
-
-                        # 开始同步数据
-                        self._sync_database_table(database, table, ent_code, is_test=is_test)
-                    except BaseException as e:
-                        logger.error(f"【同步失败】{database}.{table}", e)
-
-                # 先删除目标数据库
-                logger.info(f'删除目标数据库 【{db}】。。。')
-                self.target.execute_update(f'drop database if exists {db}')
-
-                # 循环所有表，添加同步任务
-                for key in db_map.keys():
-                    tables = db_map[key]
-                    for table in tables:
-                        # 添加任务，并发执行
-                        future = pool.submit(sync_database, key, table)
-                        futures.append(future)
+            # 循环所有表，添加同步任务
+            for key in db_map.keys():
+                tables = db_map[key]
+                for table in tables:
+                    # 添加任务，并发执行
+                    future = pool.submit(sync_database, key, table)
+                    futures.append(future)
             for future in as_completed(futures):  # 并发执行
                 import_bar.update(1)

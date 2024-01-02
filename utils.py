@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 import time
 from configparser import ConfigParser
 from subprocess import Popen, PIPE, STDOUT
@@ -10,7 +11,8 @@ from tqdm import tqdm
 
 __version__ = '2.0.9'
 __all__ = [
-    'log_time', 'logger', 'file_path', 'exe_command', 'BColors', 'str2bool', 'config'
+    'log_time', 'logger', 'file_path', 'exe_command', 'BColors', 'str2bool', 'config', 'execute_command',
+    'mysqlpump_file', 'mysql_file', 'mysqldump_file'
 ]
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
@@ -98,9 +100,41 @@ def iterator2dataframes(iterator, chunk_size: int, total_size: int) -> DataFrame
     return pd.concat(frames)
 
 
+def execute_command(cmd):
+    """
+    执行 shell 命令并实时打印输出
+    :param command: shell 命令
+    :return: process, exitcode
+    """
+    print(cmd)
+    process = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=True)
+    with process.stdout:
+        for line in iter(process.stdout.readline, b''):
+            try:
+                print(line.decode().strip())
+            except:
+                print(str(line))
+    exitcode = process.wait()
+    if exitcode != 0:
+        print('错误: 命令执行失败, 继续下一条... ')
+    return process, exitcode
+
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
 
 config = ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
+
+
+if platform.system() == 'Windows':
+    mysqlpump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqlpump.exe')
+    mysqldump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqldump.exe')
+    mysql_file = os.path.join('mysql-client', 'win', 'x64', 'mysql.exe')
+elif platform.system() == 'Darwin':
+    mysqlpump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqlpump')
+    mysqldump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqldump')
+    mysql_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysql')
+else:
+    raise BaseException('暂不支持')

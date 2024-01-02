@@ -47,26 +47,15 @@ class Mysql:
     def __init__(self, url: str):
         super().__init__()
         self.url = url
-        self.default_engine = create_engine(f'{self.url}', echo_pool=True, pool_size=20)
-        self.engines = {}
+        self.engine = create_engine(f'{self.url}', echo_pool=True, pool_size=20)
 
-    def get_engine(self, database=None) -> Engine:
+    def get_engine(self) -> Engine:
         """
         获取数据库操作engine对象
         :return:
         """
         # 如果未指定数据库，返回默认连接
-        databases = self.list_databases()
-        if not database:
-            return self.default_engine
-        if database in databases:
-            # 如果指定了数据，新建指定连接，并缓存起来
-            if database not in self.engines.keys():
-                db_url = f"{self.url[:self.url.rindex('/')]}/{database}"
-                self.engines[database] = create_engine(f'{db_url}', echo_pool=True, pool_size=20)
-            return self.engines[database]
-        else:
-            return self.default_engine
+        return self.engine
 
     def get_url(self) -> str:
         """
@@ -81,7 +70,7 @@ class Mysql:
         :param sql: sql语句
         :return: sqlalchemy.engine.cursor.CursorResult
         """
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             if database:
                 conn.execute(text(f'use `{database}`;'))
             result = conn.execute(text(sql))
@@ -93,9 +82,28 @@ class Mysql:
         :param sql: sql语句
         :return: sqlalchemy.engine.cursor.CursorResult
         """
-        conn = self.get_engine(database).connect()
+        conn = self.get_engine().connect()
         with conn.begin() as txn:
+            if database:
+                conn.execute(text(f'use `{database}`;'))
             conn.execute(text(sql), parameters)
+            txn.commit()
+        conn.close()
+
+    def execute_updates(self, sqls, database=None, desc=None):
+        """
+        执行更新或者插入语句集合, 支持通配符
+        :param sql: sql语句
+        :return: sqlalchemy.engine.cursor.CursorResult
+        """
+        sql_bar = tqdm(total=len(sqls), desc=desc)
+        conn = self.get_engine().connect()
+        with conn.begin() as txn:
+            if database:
+                conn.execute(text(f'use `{database}`;'))
+            for sql in sqls:
+                conn.execute(text(sql), None)
+                sql_bar.update(1)
             txn.commit()
         conn.close()
 
@@ -109,7 +117,7 @@ class Mysql:
         """
         # 使用 SQL 查询语句获取数据，并将结果存储到 DataFrame 对象中
         # chunks = pd.read_sql(f'SELECT * FROM `{database}`.`{table}`', con=self.engine, chunksize=chunksize)
-        chunks = pd.read_sql_table(table_name=table, con=self.get_engine(database), schema=database,
+        chunks = pd.read_sql_table(table_name=table, con=self.get_engine(), schema=database,
                                    chunksize=chunksize)
         return chunks
 
@@ -130,7 +138,7 @@ class Mysql:
         :return:
         """
         # 使用 SQL 查询语句获取数据，并将结果存储到 DataFrame 对象中
-        dataframe = pd.read_sql(sql, con=self.get_engine(database))
+        dataframe = pd.read_sql(sql, con=self.get_engine())
         # 替换bit类型的 b'\x00' 值为0
         dataframe = dataframe.map(lambda x: x[0] if type(x) is bytes else x)
         return dataframe
@@ -143,7 +151,7 @@ class Mysql:
         :return:
         """
         # 使用 SQL 查询语句获取数据，并将结果存储到 DataFrame 对象中
-        chunks = pd.read_sql(sql, con=self.get_engine(database), chunksize=chunksize)
+        chunks = pd.read_sql(sql, con=self.get_engine(), chunksize=chunksize)
         return chunks
 
     def from_table_to_csv(self, database, table, csv_file, chunk_callback=None):
@@ -183,8 +191,6 @@ class Mysql:
         # 显示进度
         chunks = tqdm(chunks, total=count / chunksize)
         for index, item in enumerate(chunks):
-            # 替换bit类型的 b'\x00' 值为0
-            item = item.map(lambda x: x[0] if type(x) is bytes else x)
             if len(item) == 0:
                 continue
             # log.info(f'导出表数据进度: {count}')
@@ -231,8 +237,6 @@ class Mysql:
         """
         chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
         for index, item in enumerate(chunks):
-            # 替换bit类型的 b'\x00' 值为0
-            item = item.map(lambda x: x[0] if type(x) is bytes else x)
             chunk_call(item)
 
     def from_sql_to_call(self, count_sql, query_sql, chunk_call, database=None, chunksize=10000):
@@ -249,7 +253,7 @@ class Mysql:
         chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】')
         for index, item in enumerate(chunks):
             # 替换bit类型的 b'\x00' 值为0
-            item = item.map(lambda x: x[0] if type(x) is bytes else x)
+            # item = item.map(lambda x: x[0] if type(x) is bytes else x)
             chunk_call(item)
 
     def from_csv_to_table(self, csv_file: str, database: str, table: str, is_truncate_data: bool,
@@ -275,7 +279,7 @@ class Mysql:
             for index, item in enumerate(chunks):
                 if chunk_wrapper:
                     item = chunk_wrapper(item, database, table)
-                item.to_sql(table, schema=database, con=self.get_engine(database), if_exists='append', index=False)
+                item.to_sql(table, schema=database, con=self.get_engine(), if_exists='append', index=False)
         except BaseException as e:
             raise ImportError(f'to_sql:【{database}.{table}】 {repr(e)}')
 
@@ -283,7 +287,7 @@ class Mysql:
         """
         列出指定数据库下所有的用户表
         """
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             conn.execute(text(f'use `{database}`'))
             rs = conn.execute(text(f'show tables;'))
             tables = list(map(lambda x: x[0], rs))
@@ -302,7 +306,7 @@ class Mysql:
         """
         列出指定数据库下，没有索引的表
         """
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             conn.execute(text(f'use `{database}`;'))
             rs = conn.execute(text(f'show tables;'))
             tables = list(map(lambda x: x[0], rs))
@@ -329,7 +333,7 @@ class Mysql:
         获取数据库中用户所有表的索引删除sql
         """
         drop_sqls = []
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             conn.execute(text(f'use `{database}`;'))
             rs = conn.execute(text(f'show tables;'))
             for r in rs:
@@ -365,7 +369,7 @@ class Mysql:
 
     def get_index_alert_sqls(self, database) -> list[str]:
         index_alert_sqls = []
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             conn.execute(text(f'use `{database}`;'))
             rs = conn.execute(text(f'show tables;'))
             for r in rs:
@@ -428,7 +432,7 @@ class Mysql:
         放开group by 的限制条件
         """
         index_alert_sqls = []
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             index_alert_sql = f"""SELECT
                                         TABLE_NAME,
                                          CONCAT(
@@ -484,7 +488,7 @@ class Mysql:
         获取数据库中用户所有表的索引删除sql
         """
         drop_sqls = []
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             index_drop_sql = f"""SELECT
                                         TABLE_NAME,
                                         CONCAT(
@@ -549,7 +553,7 @@ class Mysql:
                             INFORMATION_SCHEMA.TABLES 
                         WHERE
                             TABLE_TYPE = "BASE TABLE" and TABLE_SCHEMA = '{database}';"""
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             rs = conn.execute(text(get_alert_sql))
             for r in rs:
                 alert_sqls.append(r[0])
@@ -566,7 +570,7 @@ class Mysql:
             show_create_table_sql = f'show create table `{database}`.`{table}`'
         else:
             show_create_table_sql = f'show create table {table}'
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             rs = conn.execute(text(show_create_table_sql))
             return rs.one()[1]
         return None
@@ -578,7 +582,7 @@ class Mysql:
         :return:
         """
         show_create_database_sql = f'show create database {database}'
-        with self.get_engine(database).connect() as conn:
+        with self.get_engine().connect() as conn:
             rs = conn.execute(text(show_create_database_sql))
             return rs.one()[1]
         return None
@@ -613,6 +617,16 @@ class Mysql:
         :param table: 表名
         :return: True:存在 False:不存在
         """
-        with self.get_engine(database).connect() as conn:
-            has_table = self.get_engine(database).dialect.has_table(conn, f"{table}", schema=database)
+        with self.get_engine().connect() as conn:
+            has_table = self.get_engine().dialect.has_table(conn, f"{table}", schema=database)
             return has_table
+
+    def exists_database(self, database):
+        """
+        是否存在指定库
+        :param database: 数据库
+        :return: True:存在 False:不存在
+        """
+        with self.get_engine().connect() as conn:
+            has_database = self.get_engine().dialect.has_schema(conn, database)
+            return has_database
