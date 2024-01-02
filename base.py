@@ -447,6 +447,7 @@ class BaseSync:
                         logger.error(f"【同步失败】{database}.{table}", e)
 
                 # 先删除目标数据库
+                logger.info(f'删除目标数据库 【{db}】。。。')
                 self.target.execute_update(f'drop database if exists {db}')
 
                 # 循环所有表，添加同步任务
