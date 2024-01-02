@@ -66,7 +66,13 @@ class TestTable(unittest.TestCase):
         count_sql = 'select count(0) from data_authority.setting'
         query_sql = 'select * from data_authority.setting'
 
-        source_rds01 = Mysql('aws_rds01_read_mysql')
+        # rds01 mysql连接
+        self.rds_host = config.get('source_mysql', 'rds_01_host')
+        self.rds_port = config.get('source_mysql', 'rds_01_port')
+        self.rds_user = config.get('source_mysql', 'rds_01_user')
+        self.rds_pass = config.get('source_mysql', 'rds_01_pass')
+
+        source_rds01 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
         # source_rds01.from_table_to_csv('data_authority', 'setting', csv_files[0],
         #                                chunk_callback=chunk_callback)
         source_rds01.from_sql_to_csv(count_sql, query_sql, csv_files[1],

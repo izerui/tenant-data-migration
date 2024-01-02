@@ -9,6 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from tqdm import tqdm
 
+from utils import mysqldump_file, mysql_file, execute_command, log_time
+
 
 class Csv:
     """
@@ -44,10 +46,14 @@ class Mysql:
     mysql操作基础类
     """
 
-    def __init__(self, url: str):
+    def __init__(self, host: str, port: str, user: str, password: str):
         super().__init__()
-        self.url = url
-        self.engine = create_engine(f'{self.url}', echo_pool=True, pool_size=20)
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        url = f'mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/mysql'
+        self.engine = create_engine(url, echo_pool=True, pool_size=20)
 
     def get_engine(self) -> Engine:
         """
@@ -630,3 +636,15 @@ class Mysql:
         with self.get_engine().connect() as conn:
             has_database = self.get_engine().dialect.has_schema(conn, database)
             return has_database
+
+    @log_time
+    def import_sql_file(self, sql_file, database):
+        """
+        导入sql文件
+        :param sql_file:
+        :param database:
+        :return:
+        """
+        import_shell = f'{mysql_file} -v --host={self.host} --user={self.user} --password={self.password} --port={self.port} --max_allowed_packet=67108864 --net_buffer_length=16384 -D {database}< {sql_file}'
+        execute_command(import_shell)
+        pass

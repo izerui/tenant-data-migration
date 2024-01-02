@@ -1,9 +1,8 @@
 import json
-import os
 
 from base import BaseExport, BaseImport, BaseSync
 from sink import Mysql
-from utils import config, mysqldump_file, execute_command
+from utils import config
 
 # 导出的csv临时目录
 dumps_folder = config.get('global', 'dumps_folder')
@@ -35,16 +34,18 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         self.rds_user = config.get('source_mysql', 'rds_01_user')
         self.rds_pass = config.get('source_mysql', 'rds_01_pass')
 
-        url = f'mysql+pymysql://{self.rds_user}:{self.rds_pass}@{self.rds_host}:{self.rds_port}/mysql'
-
-        source_rds01 = Mysql(url)
+        source_rds01 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
         # rds01 要导入的表
         databases_rds01 = ['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
                            'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
                            'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
                            'unicom', 'workflow', 'wx_applet']
         # 要导入的目的mysql
-        target = Mysql(config.get('target_mysql', 'url'))
+        self.target_host = config.get('target_mysql', 'host')
+        self.target_port = config.get('target_mysql', 'port')
+        self.target_user = config.get('target_mysql', 'user')
+        self.target_pass = config.get('target_mysql', 'pass')
+        target = Mysql(self.target_host, self.target_port, self.target_user, self.target_pass)
 
         # 初始化导出对象
         BaseExport.__init__(self, source_rds01,
@@ -141,14 +142,6 @@ class Rds01(BaseExport, BaseImport, BaseSync):
             return False
         return super().table_match_filter(database, table)
 
-    # def get_database_create_sql(self, database):
-    #     if not os.path.exists(dumps_folder):
-    #         os.makedirs(dumps_folder)
-    #     create_sql_file = os.path.join(dumps_folder, database + ".sql")
-    #     export_cmd = f'{mysqldump_file} --single-transaction -h {self.rds_host} -u{self.rds_user} -p{self.rds_pass} --port={self.rds_port} -d {database} > {create_sql_file}'
-    #     execute_command(export_cmd)
-    #     pass
-
 
 class Rds02(BaseExport, BaseImport, BaseSync):
 
@@ -160,15 +153,18 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         self.rds_user = config.get('source_mysql', 'rds_02_user')
         self.rds_pass = config.get('source_mysql', 'rds_02_pass')
 
-        url = f'mysql+pymysql://{self.rds_user}:{self.rds_pass}@{self.rds_host}:{self.rds_port}/mysql'
-
         # rds02 mysql连接
-        source_rds02 = Mysql(url)
+        source_rds02 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
 
         # rds02 要导入的库
         databases_rds02 = ['manufacture', 'storehouse', 'qc']
+
         # 要导入的目的mysql
-        target = Mysql(config.get('target_mysql', 'url'))
+        self.target_host = config.get('target_mysql', 'host')
+        self.target_port = config.get('target_mysql', 'port')
+        self.target_user = config.get('target_mysql', 'user')
+        self.target_pass = config.get('target_mysql', 'pass')
+        target = Mysql(self.target_host, self.target_port, self.target_user, self.target_pass)
 
         # 初始化导出对象
         BaseExport.__init__(self, source_rds02,
@@ -207,11 +203,3 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
         return super().table_match_filter(database, table)
-
-    # def get_database_create_sql(self, database):
-    #     if not os.path.exists(dumps_folder):
-    #         os.makedirs(dumps_folder)
-    #     create_sql_file = os.path.join(dumps_folder, database + ".sql")
-    #     export_cmd = f'{mysqldump_file} --single-transaction -h {self.rds_host} -u{self.rds_user} -p{self.rds_pass} --port={self.rds_port} -d {database} > {create_sql_file}'
-    #     execute_command(export_cmd)
-    #     pass

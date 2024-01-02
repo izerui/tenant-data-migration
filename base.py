@@ -359,11 +359,9 @@ class BaseSync:
             self.__create_database_if_not_exists(database)
 
             # 如果文件存在则使用sql文件创建
-            create_tables_sql_file = os.path.join('tables', 'create', f'{database}.sql')
+            create_tables_sql_file = os.path.join('sqls', 'create', f'{database}.sql')
             if os.path.exists(create_tables_sql_file):
-                with open(create_tables_sql_file, 'r') as f:
-                    sql = f.read()
-                    self.target.execute_update(sql, database, '从文件创建目标表...')
+                self.target.import_sql_file(create_tables_sql_file, database)
             else:
                 # 重建目标表
                 table_create_sqls = []
@@ -448,10 +446,6 @@ class BaseSync:
 
         self.after_handle_data(database, table, index_alert_sqls)
         pass
-
-    @abstractmethod
-    def get_database_create_sql(self, database):
-        return ''
 
     @log_time
     def sync_parallel(self, ent_code, is_test=False):
