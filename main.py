@@ -15,10 +15,9 @@ def export_csv(ent_code: str):
     pass
 
 
-def import_db(is_renew_database: bool = False, is_truncate_data: bool = False):
+def import_db(is_truncate_data: bool = False):
     """
     导入
-    :param is_renew_database:
     :param is_truncate_data:
     :return:
     """
@@ -27,7 +26,7 @@ def import_db(is_renew_database: bool = False, is_truncate_data: bool = False):
     rds_list = [rds01, rds02]
     for rds in rds_list:
         logger.info(f'【开始导入csv {rds.get_name()}】。。。')
-        rds.import_parallel(is_renew_database, is_truncate_data)
+        rds.import_parallel(is_truncate_data)
 
 
 if __name__ == '__main__':
@@ -35,8 +34,6 @@ if __name__ == '__main__':
     ent_code = config.get('global', 'ent_code')
     export_csv(ent_code)
 
-    # 是否导入前重建目标数据库
-    is_renew_database = str2bool(config.get('global', 'is_renew_database'))
     # 是否清空目标表数据
     is_truncate_data = str2bool(config.get('global', 'is_truncate_data'))
-    import_db(is_renew_database, is_truncate_data)
+    import_db(is_truncate_data)

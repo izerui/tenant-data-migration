@@ -206,9 +206,9 @@ class Mysql:
         :return:
         """
         count_query = f'SELECT count(0) FROM `{database}`.`{table}`'
-        print(f'执行查询条目数: {count_query}')
+        # print(f'执行查询条目数: {count_query}')
         count = self.execute_query(count_query).scalar()
-        print(f'共 {count} 条记录，开始读取数据...')
+        # print(f'共 {count} 条记录，开始读取数据...')
         chunks = self.get_dataframe_chunks_from_table(database, table, chunksize=chunksize)
         # 显示进度
         chunks = tqdm(chunks, total=count / chunksize, desc=f'{table} 表数据处理进度')
@@ -221,9 +221,9 @@ class Mysql:
         :param table: 数据库表名
         :return:
         """
-        print(f'【执行查询条目数】: \r\n {count_sql}')
+        # print(f'【执行查询条目数】: \r\n {count_sql}')
         count = self.execute_query(count_sql).scalar()
-        print(f'【条目数】共 {count} 条记录，开始读取数据...')
+        # print(f'【条目数】共 {count} 条记录，开始读取数据...')
         chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
         # 显示进度
         chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】\r\n {query_sql}')

@@ -25,8 +25,6 @@ class TestTable(unittest.TestCase):
         导入csv数据到uat环境
         :return:
         """
-        # 是否导入前重建目标数据库
-        is_renew_database = False
         # 是否清空目标表数据
         is_truncate_data = True
         rds01 = Rds01()
@@ -34,7 +32,21 @@ class TestTable(unittest.TestCase):
         rds_list = [rds01, rds02]
         for rds in rds_list:
             logger.info(f'【开始导入csv {rds.get_name()}】。。。')
-            rds.import_parallel(is_renew_database, is_truncate_data)
+            rds.import_parallel(is_truncate_data)
+        pass
+
+    def test_sync(self):
+        """
+        同步数据
+        :return:
+        """
+        ent_code = '638334323'
+        rds01 = Rds01()
+        rds02 = Rds02()
+        rds_list = [rds01, rds02]
+        for rds in rds_list:
+            logger.info(f'【开始同步 {rds.get_name()}】。。。')
+            rds.sync_parallel(ent_code)
         pass
 
     # 读取sql，测试转换异常字段类型

@@ -1,6 +1,6 @@
 import json
 
-from base import BaseExport, BaseImport
+from base import BaseExport, BaseImport, BaseSync
 from sink import Mysql
 from utils import config
 
@@ -24,7 +24,7 @@ def format_json(text):
         return json.dumps(json.loads(text))
 
 
-class Rds01(BaseExport, BaseImport):
+class Rds01(BaseExport, BaseImport, BaseSync):
 
     def __init__(self):
 
@@ -45,6 +45,9 @@ class Rds01(BaseExport, BaseImport):
                             max_workers=8)
         # 初始化导入对象
         BaseImport.__init__(self, source_rds01, target, databases_rds01, dumps_folder)
+
+        # 初始化同步对象(独立同步逻辑，与上面的导出导入无关)
+        BaseSync.__init__(self, source_rds01, target, databases_rds01)
 
     def get_name(self):
         return 'rds01'
@@ -119,7 +122,7 @@ class Rds01(BaseExport, BaseImport):
         return super().table_match_filter(database, table)
 
 
-class Rds02(BaseExport, BaseImport):
+class Rds02(BaseExport, BaseImport, BaseSync):
 
     def __init__(self):
         # rds02 mysql连接
@@ -136,6 +139,9 @@ class Rds02(BaseExport, BaseImport):
                             max_workers=6)
         # 初始化导入对象
         BaseImport.__init__(self, source_rds02, target, databases_rds02, dumps_folder)
+
+        # 初始化同步对象(独立同步逻辑，与上面的导出导入无关)
+        BaseSync.__init__(self, source_rds02, target, databases_rds02)
 
     def get_name(self):
         return 'rds02'
