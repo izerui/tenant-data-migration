@@ -9,8 +9,6 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from tqdm import tqdm
 
-from utils import config
-
 
 class Csv:
     """
@@ -58,13 +56,17 @@ class Mysql:
         :return:
         """
         # 如果未指定数据库，返回默认连接
+        databases = self.list_databases()
         if not database:
             return self.default_engine
-        # 如果指定了数据，新建指定连接，并缓存起来
-        if database not in self.engines.keys():
-            db_url = f"{self.url[:self.url.rindex('/')]}/{database}"
-            self.engines[database] = create_engine(f'{db_url}', echo_pool=True, pool_size=20)
-        return self.engines[database]
+        if database in databases:
+            # 如果指定了数据，新建指定连接，并缓存起来
+            if database not in self.engines.keys():
+                db_url = f"{self.url[:self.url.rindex('/')]}/{database}"
+                self.engines[database] = create_engine(f'{db_url}', echo_pool=True, pool_size=20)
+            return self.engines[database]
+        else:
+            return self.default_engine
 
     def get_url(self) -> str:
         """
@@ -271,7 +273,7 @@ class Mysql:
         """
         列出指定连接的所有数据库
         """
-        with self.get_engine().connect() as conn:
+        with self.default_engine.connect() as conn:
             rs = conn.execute(text(f'show databases;'))
             databases = list(map(lambda x: x[0], rs))
             return databases

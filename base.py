@@ -188,7 +188,7 @@ class BaseImport:
             db_create_sql = db_create_sql.replace('CREATE DATABASE', 'CREATE DATABASE IF NOT EXISTS')
             self.target.execute_update(db_create_sql)
         except BaseException as e:
-            raise DatabaseError(f'【{database}】错误: {repr(database)}')
+            raise DatabaseError(f'【{database}】错误: {repr(e)}')
 
     def __create_table_if_not_exists(self, database, table):
         """
