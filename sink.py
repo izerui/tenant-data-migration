@@ -95,8 +95,6 @@ class Mysql:
         """
         conn = self.get_engine(database).connect()
         with conn.begin() as txn:
-            if database:
-                conn.execute(text(f'use `{database}`;'))
             conn.execute(text(sql), parameters)
             txn.commit()
         conn.close()
@@ -199,6 +197,16 @@ class Mysql:
                 # 创建文件并将 DataFrame 对象写入 csv 文件中
                 item.to_csv(csv_file, index=False, encoding='utf-8')
 
+    def from_table_to_call_no_processor(self, database, table, chunk_call, chunksize=10000):
+        """
+        从数据表导出到csv文件
+        :param table: 数据库表名
+        :return:
+        """
+        chunks = self.get_dataframe_chunks_from_table(database, table, chunksize=chunksize)
+        for index, item in enumerate(chunks):
+            chunk_call(item)
+
     def from_table_to_call(self, database, table, chunk_call, chunksize=10000):
         """
         从数据表导出到csv文件
@@ -215,6 +223,18 @@ class Mysql:
         for index, item in enumerate(chunks):
             chunk_call(item)
 
+    def from_sql_to_call_no_processor(self, query_sql, chunk_call, database=None, chunksize=10000):
+        """
+        从数据表导出到csv文件,不显示进度条
+        :param table: 数据库表名
+        :return:
+        """
+        chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
+        for index, item in enumerate(chunks):
+            # 替换bit类型的 b'\x00' 值为0
+            item = item.map(lambda x: x[0] if type(x) is bytes else x)
+            chunk_call(item)
+
     def from_sql_to_call(self, count_sql, query_sql, chunk_call, database=None, chunksize=10000):
         """
         从数据表导出到csv文件
@@ -226,7 +246,7 @@ class Mysql:
         # print(f'【条目数】共 {count} 条记录，开始读取数据...')
         chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
         # 显示进度
-        chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】\r\n {query_sql}')
+        chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】')
         for index, item in enumerate(chunks):
             # 替换bit类型的 b'\x00' 值为0
             item = item.map(lambda x: x[0] if type(x) is bytes else x)

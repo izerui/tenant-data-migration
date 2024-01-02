@@ -27,14 +27,6 @@ class BaseExport:
     def get_name(self):
         return ''
 
-    @abstractmethod
-    def is_skiped(self):
-        """
-        是否忽略当前导出实例
-        :return:
-        """
-        return False
-
     def table_match_filter(self, database, table):
         """
         匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
@@ -120,9 +112,6 @@ class BaseExport:
         :param ent_code:
         :return:
         """
-
-        if self.is_skiped():
-            return
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             futures = []
             for index, db in enumerate(self.databases):
@@ -352,53 +341,57 @@ class BaseSync:
         except BaseException as e:
             raise MySQLError(f'create table error: 【{database}.{table}】 {repr(e)}')
 
-    def _sync_database(self, database, ent_code):
+    def _sync_database_table(self, database, table, ent_code):
         """
         同步源库下的表数据到目标库下
         :param database:
+        :param table:
         :param ent_code:
         :return:
         """
-        # 判断库存在
-        self.__create_database_if_not_exists(database)
+        # 调试模式，单独只导入某一个表
+        debug_table = self.single_table_for_debug()
+        if debug_table and table != debug_table:
+            return
 
-        source_tables = self.source.list_tables(database)
-        for index, table in enumerate(source_tables):
+        # 匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
+        if self.table_match_filter:
+            matcher = self.table_match_filter(database, table)
+            if not matcher:
+                return
 
-            # 判断表存在
-            self.__create_table_if_not_exists(database, table)
+        # 同步前先清空目标表数据
+        # self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
 
-            # 调试模式，单独只导入某一个表
-            debug_table = self.single_table_for_debug()
-            if debug_table and table != debug_table:
-                continue
+        # 读取到数据分批写入到目标表
+        def from_chunk_to_target_table(chunk: DataFrame):
+            chunk.to_sql(table, schema=database, con=self.target.get_engine(database), if_exists='append',
+                         index=False)
+            pass
 
-            # 匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
-            if self.table_match_filter:
-                matcher = self.table_match_filter(database, table)
-                if not matcher:
-                    continue
+        # 记录索引
+        index_alert_sqls = self.target.get_table_index_alert_sqls(database, table)
+        # 导入前删除索引
+        index_drop_sqls = self.target.get_table_index_drop_sql(database, table)
+        if index_drop_sqls:
+            for index_drop in index_drop_sqls:
+                self.target.execute_update(index_drop, database=database)
 
-            logger.info(f'    【同步表 {database}.{table} {index + 1}/{len(source_tables)}】。。。')
+        # 判断表是否包含ent_code字段
+        exist_ent_code_column = self.source.exists_table_column(database, table, 'ent_code')
+        # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
+        if not exist_ent_code_column:
+            self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
+        else:
+            count_sql = f"/** 导出数量 **/ select count(0) from `{database}`.`{table}` where ent_code = '{ent_code}'"
+            query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
+            self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
-            # 同步前先清空目标表数据
-            self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
-
-            # 读取到数据分批写入到目标表
-            def from_chunk_to_target_table(chunk: DataFrame):
-                chunk.to_sql(table, schema=database, con=self.target.get_engine(database), if_exists='append', index=False)
-                pass
-
-            # 判断表是否包含ent_code字段
-            exist_ent_code_column = self.source.exists_table_column(database, table, 'ent_code')
-
-            # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
-            if not exist_ent_code_column:
-                self.source.from_table_to_call(database, table, from_chunk_to_target_table)
-            else:
-                count_sql = f"/** 导出数量 **/ select count(0) from `{database}`.`{table}` where ent_code = '{ent_code}'"
-                query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
-                self.source.from_sql_to_call(count_sql, query_sql, from_chunk_to_target_table, database=database)
+        # 导入后恢复索引
+        if index_alert_sqls:
+            for index_alert in index_alert_sqls:
+                self.target.execute_update(index_alert, database)
+        pass
 
     def sync_parallel(self, ent_code):
         """
@@ -406,23 +399,43 @@ class BaseSync:
         :param ent_code:
         :return:
         """
+        tbl_count = 0
+        db_map = {}
+        for database in self.databases:
+            # 列出源库的所有数据表
+            tables = self.source.list_tables(database=database)
+            logger.info(f'{database} -> {tables}')
+            tbl_count += len(tables)
+            db_map[f'{database}'] = tables
 
-        if self.is_skiped():
-            return
+        import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的数据处理进度')
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             futures = []
             for index, db in enumerate(self.databases):
 
                 # 同步入口方法
-                def sync_database(database):
+                def sync_database(database, table):
                     try:
-                        logger.info(f'【同步库 {database} {index + 1}/{len(self.databases)}】。。。')
-                        self._sync_database(database, ent_code)
+                        # 判断库存在
+                        self.__create_database_if_not_exists(database)
+
+                        # 判断表存在
+                        self.__create_table_if_not_exists(database, table)
+
+                        # 开始同步数据
+                        self._sync_database_table(database, table, ent_code)
                     except BaseException as e:
                         logger.error(f"【同步失败】{repr(e)}")
 
-                # 并发执行
-                future = pool.submit(sync_database, db)
-                futures.append(future)
+                # 先删除目标数据库
+                self.target.execute_update(f'drop database if exists {db}')
+
+                # 循环所有表，添加同步任务
+                for key in db_map.keys():
+                    tables = db_map[key]
+                    for table in tables:
+                        # 添加任务，并发执行
+                        future = pool.submit(sync_database, key, table)
+                        futures.append(future)
             for future in as_completed(futures):  # 并发执行
-                logger.info(f'【同步成功 {db} {index + 1}/{len(self.databases)}】')
+                import_bar.update(1)

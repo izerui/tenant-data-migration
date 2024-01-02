@@ -52,9 +52,6 @@ class Rds01(BaseExport, BaseImport, BaseSync):
     def get_name(self):
         return 'rds01'
 
-    def is_skiped(self):
-        return False
-
     def single_table_for_debug(self):
         return debug_table
 
@@ -145,9 +142,6 @@ class Rds02(BaseExport, BaseImport, BaseSync):
 
     def get_name(self):
         return 'rds02'
-
-    def is_skiped(self):
-        return False
 
     def single_table_for_debug(self):
         return debug_table
