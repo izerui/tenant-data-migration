@@ -425,7 +425,7 @@ class BaseSync:
                         # 开始同步数据
                         self._sync_database_table(database, table, ent_code)
                     except BaseException as e:
-                        logger.error(f"【同步失败】{repr(e)}")
+                        logger.error(f"【同步失败】{database}.{table} {repr(e)}")
 
                 # 先删除目标数据库
                 self.target.execute_update(f'drop database if exists {db}')
