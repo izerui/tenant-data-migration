@@ -72,14 +72,18 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         #     }
         return None
 
-    def chunk_wrapper(self, df, database, table):
+    def chunk_wrapper(self, df, database, table, is_sync=False):
         """
         对csv读取的df对象进行二次处理，保证导入顺利
         :param df: df对象
         :param database: 要导入的数据库
         :param table: 要导入的表
+        :param is_sync: 是否是同步数据模式(该模式下没有中间商，故部分数据不需要处理)
         :return: 处理后的df对象
         """
+
+        if is_sync:
+            return df
 
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
@@ -146,7 +150,10 @@ class Rds02(BaseExport, BaseImport, BaseSync):
     def single_table_for_debug(self):
         return debug_table
 
-    def chunk_wrapper(self, df, database, table):
+    def chunk_wrapper(self, df, database, table, is_sync=False):
+        if is_sync:
+            return df
+
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 

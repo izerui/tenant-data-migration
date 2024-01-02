@@ -154,12 +154,13 @@ class BaseImport:
         """
         return None
 
-    def chunk_wrapper(self, df, database, table):
+    def chunk_wrapper(self, df, database, table, is_sync=False):
         """
         读取到csv后，进行的二次包装处理，比如过滤数据
         :param df: 读取的csv文件到pandas对象
         :param database: 要导入的数据库
         :param table: 要导入到的表
+        :param is_sync: 是否是同步数据模式(该模式下没有中间商，故部分数据不需要处理)
         :return: pandas DataFrame 对象
         """
         return df
@@ -313,6 +314,17 @@ class BaseSync:
         """
         return None
 
+    def chunk_wrapper(self, df, database, table, is_sync=False):
+        """
+        读取到csv后，进行的二次包装处理，比如过滤数据
+        :param df: 读取的csv文件到pandas对象
+        :param database: 要导入的数据库
+        :param table: 要导入到的表
+        :param is_sync: 是否是同步数据模式(该模式下没有中间商，故部分数据不需要处理)
+        :return: pandas DataFrame 对象
+        """
+        return df
+
     def __create_database_if_not_exists(self, database):
         """
         自动判断是否创建目标库
@@ -341,7 +353,7 @@ class BaseSync:
         except BaseException as e:
             raise MySQLError(f'create table error: 【{database}.{table}】 {repr(e)}')
 
-    def _sync_database_table(self, database, table, ent_code):
+    def _sync_database_table(self, database, table, ent_code, is_test=False):
         """
         同步源库下的表数据到目标库下
         :param database:
@@ -365,6 +377,7 @@ class BaseSync:
 
         # 读取到数据分批写入到目标表
         def from_chunk_to_target_table(chunk: DataFrame):
+            chunk = self.chunk_wrapper(chunk, database, table, True)
             chunk.to_sql(table, schema=database, con=self.target.get_engine(database), if_exists='append',
                          index=False)
             pass
@@ -377,15 +390,20 @@ class BaseSync:
             for index_drop in index_drop_sqls:
                 self.target.execute_update(index_drop, database=database)
 
-        # 判断表是否包含ent_code字段
-        exist_ent_code_column = self.source.exists_table_column(database, table, 'ent_code')
-        # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
-        if not exist_ent_code_column:
-            self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
-        else:
-            count_sql = f"/** 导出数量 **/ select count(0) from `{database}`.`{table}` where ent_code = '{ent_code}'"
-            query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
+        # 测试的话，只同步前10条记录
+        if is_test:
+            query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` limit 10"
             self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
+        else:
+            # 判断表是否包含ent_code字段
+            exist_ent_code_column = self.source.exists_table_column(database, table, 'ent_code')
+
+            # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
+            if not exist_ent_code_column:
+                self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
+            else:
+                query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
+                self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
         # 导入后恢复索引
         if index_alert_sqls:
@@ -393,10 +411,11 @@ class BaseSync:
                 self.target.execute_update(index_alert, database)
         pass
 
-    def sync_parallel(self, ent_code):
+    def sync_parallel(self, ent_code, is_test=False):
         """
         并行同步实例下的多个数据库表数据
         :param ent_code:
+        :param is_test: 测试模式 只同步前10条记录
         :return:
         """
         tbl_count = 0
@@ -423,9 +442,9 @@ class BaseSync:
                         self.__create_table_if_not_exists(database, table)
 
                         # 开始同步数据
-                        self._sync_database_table(database, table, ent_code)
+                        self._sync_database_table(database, table, ent_code, is_test=is_test)
                     except BaseException as e:
-                        logger.error(f"【同步失败】{database}.{table} {repr(e)}")
+                        logger.error(f"【同步失败】{database}.{table}", e)
 
                 # 先删除目标数据库
                 self.target.execute_update(f'drop database if exists {db}')
