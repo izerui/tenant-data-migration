@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from tqdm import tqdm
 
-from utils import mysqldump_file, mysql_file, execute_command, log_time
+from utils import mysqldump_file, mysql_file, execute_command, log_time, logger
 
 
 class Csv:
@@ -637,7 +637,7 @@ class Mysql:
             has_database = self.get_engine().dialect.has_schema(conn, database)
             return has_database
 
-    @log_time
+    
     def import_sql_file(self, sql_file, database):
         """
         导入sql文件
@@ -645,6 +645,7 @@ class Mysql:
         :param database:
         :return:
         """
+        logger.info(f'【{database}】导入sql文件 {sql_file}')
         import_shell = f'{mysql_file} -v --host={self.host} --user={self.user} --password={self.password} --port={self.port} --max_allowed_packet=67108864 --net_buffer_length=16384 -D {database}< {sql_file}'
         execute_command(import_shell)
         pass

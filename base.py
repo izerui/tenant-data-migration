@@ -9,7 +9,7 @@ from pymysql import DatabaseError, MySQLError
 from tqdm import tqdm
 
 from sink import Mysql
-from utils import logger, log_time
+from utils import logger
 
 
 class BaseExport:
@@ -332,7 +332,6 @@ class BaseSync:
         """
         return df
 
-    @log_time
     def __create_database_if_not_exists(self, database):
         """
         自动判断是否创建目标库
@@ -346,7 +345,6 @@ class BaseSync:
         except BaseException as e:
             raise DatabaseError(f'【{database}】错误: {repr(e)}')
 
-    @log_time
     def __create_database_tables_if_not_exists(self, database, tables):
         """
         创建目标表
@@ -374,7 +372,6 @@ class BaseSync:
         except BaseException as e:
             raise MySQLError(f'create error: 【{database}】 {repr(e)}')
 
-    @log_time
     def return_before_handle_data(self, database, table):
         """
         数据前置处理器
@@ -391,7 +388,6 @@ class BaseSync:
                 self.target.execute_update(index_drop, database=database)
         return index_alert_sqls
 
-    @log_time
     def after_handle_data(self, database, table, before_return_result):
         # 导入后恢复索引
         if before_return_result:
@@ -399,7 +395,6 @@ class BaseSync:
                 self.target.execute_update(index_alert, database)
         pass
 
-    @log_time
     def _sync_database_table(self, database, table, ent_code, is_test=False):
         """
         同步源库下的表数据到目标库下
@@ -447,7 +442,6 @@ class BaseSync:
         self.after_handle_data(database, table, index_alert_sqls)
         pass
 
-    @log_time
     def sync_parallel(self, ent_code, is_test=False):
         """
         并行同步实例下的多个数据库表数据
