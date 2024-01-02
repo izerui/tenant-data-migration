@@ -14,10 +14,10 @@ class TestTable(unittest.TestCase):
         :return:
         """
         ent_code = '638334323'
-        rds_list = [Rds01(ent_code), Rds02(ent_code)]
+        rds_list = [Rds01(), Rds02()]
         for rds in rds_list:
             logger.info(f'【导出csv {rds.get_name()}】。。。')
-            rds.export_parallel()
+            rds.export_parallel(ent_code)
         pass
 
     def test_import(self):

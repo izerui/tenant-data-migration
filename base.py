@@ -34,13 +34,6 @@ class BaseExport:
         """
         return False
 
-    def get_databases(self):
-        """
-        获取当前导出实例定义的数据库列表
-        :return:
-        """
-        return self.databases
-
     def table_match_filter(self, database, table):
         """
         匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
@@ -49,6 +42,13 @@ class BaseExport:
         :return: True:处理当前表  False:不处理当前表
         """
         return True
+
+    def single_table_for_debug(self):
+        """
+        返回单独某一个表，调试状态使用
+        :return:
+        """
+        return None
 
     def _export_database(self, database, ent_code):
         """
@@ -64,6 +64,12 @@ class BaseExport:
 
         source_tables = self.source.list_tables(database)
         for index, source_table in enumerate(source_tables):
+
+            # 调试模式，单独只导入某一个表
+            debug_table = self.single_table_for_debug()
+            if debug_table and source_table != debug_table:
+                continue
+
             # 匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
             if self.table_match_filter:
                 matcher = self.table_match_filter(database, source_table)
