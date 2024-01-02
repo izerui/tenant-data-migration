@@ -460,9 +460,6 @@ class BaseSync:
 
         # 同步结构
         for database in db_map.keys():
-            # 工作流因为有有关联关系，创建表有问题，故保留跳过创建结构
-            if database == 'workflow':
-                continue
             # 先重建目标数据库结构
             logger.info(f'【{database}】删除重建。。。')
             self.target.execute_update(f'drop database if exists {database}')
