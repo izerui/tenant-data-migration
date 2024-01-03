@@ -101,6 +101,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
+        df.drop(columns=['id'], inplace=True)
         if is_sync:
             if is_db_tbl('rbac_new', 'ent'):
                 df['name'] = df['name'].apply(lambda x: f'uat.{x}')
@@ -142,6 +143,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         :param table: 表名
         :return: True:处理当前表  False:不处理当前表
         """
+
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
@@ -203,8 +205,8 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
+        df.drop(columns=['id'], inplace=True)
         if is_sync:
-            df.drop(columns=['id'], inplace=True)
             return df
         else:
             if is_db_tbl('manufacture', 'customer'):
