@@ -103,40 +103,42 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         :return: 处理后的df对象
         """
 
-        if is_sync:
-            return df
-
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        if is_db_tbl('cloud_sale', 'balance_todo'):
-            # 过滤掉customer_material_code字段是空字符串的数据
-            # df = df[df['customer_material_code'].astype(str).str.strip() != '']
+        if is_sync:
+            if is_db_tbl('rbac_new', 'ent'):
+                df['name'] = df['name'].apply(lambda x: f'uat.{x}')
+            return df
+        else:
+            if is_db_tbl('cloud_sale', 'balance_todo'):
+                # 过滤掉customer_material_code字段是空字符串的数据
+                # df = df[df['customer_material_code'].astype(str).str.strip() != '']
 
-            # 将字段customer_material_code为空的补充为''
-            df['customer_material_code'] = df['customer_material_code'].fillna('')
-            df['customer_inventory_name'] = df['customer_inventory_name'].fillna('')
-            df['customer_inventory_spec'] = df['customer_inventory_spec'].fillna('')
-            df['sale_inventory_record_id'] = df['sale_inventory_record_id'].fillna('')
-            df['inventory_id'] = df['inventory_id'].fillna('')
-            df['inventory_name'] = df['inventory_name'].fillna('')
-        if is_db_tbl('crm', 'customer'):
-            # 过滤掉name为空的数据
-            # df = df[df['name'].astype(str).str.strip() != '']
+                # 将字段customer_material_code为空的补充为''
+                df['customer_material_code'] = df['customer_material_code'].fillna('')
+                df['customer_inventory_name'] = df['customer_inventory_name'].fillna('')
+                df['customer_inventory_spec'] = df['customer_inventory_spec'].fillna('')
+                df['sale_inventory_record_id'] = df['sale_inventory_record_id'].fillna('')
+                df['inventory_id'] = df['inventory_id'].fillna('')
+                df['inventory_name'] = df['inventory_name'].fillna('')
+            if is_db_tbl('crm', 'customer'):
+                # 过滤掉name为空的数据
+                # df = df[df['name'].astype(str).str.strip() != '']
 
-            # 将字段name为空的补充为''
-            df['name'] = df['name'].fillna('')
-            pass
-        if is_db_tbl('unicom', 'purchase_coordination_file_type'):
-            # 将creator为空的补充为''
-            df['creator'] = df['creator'].fillna('')
-        if is_db_tbl('form_template', 'element_config'):
-            df['element_describe'] = df['element_describe'].apply(format_json)
-        if is_db_tbl('form_template', 'form_template_detail'):
-            df['template_json'] = df['template_json'].apply(format_json)
-        if is_db_tbl('cloud_sale', 'sale_proposal'):
-            df['customer_material_code'] = df['customer_material_code'].fillna('')
-        return df
+                # 将字段name为空的补充为''
+                df['name'] = df['name'].fillna('')
+                pass
+            if is_db_tbl('unicom', 'purchase_coordination_file_type'):
+                # 将creator为空的补充为''
+                df['creator'] = df['creator'].fillna('')
+            if is_db_tbl('form_template', 'element_config'):
+                df['element_describe'] = df['element_describe'].apply(format_json)
+            if is_db_tbl('form_template', 'form_template_detail'):
+                df['template_json'] = df['template_json'].apply(format_json)
+            if is_db_tbl('cloud_sale', 'sale_proposal'):
+                df['customer_material_code'] = df['customer_material_code'].fillna('')
+            return df
 
     def table_match_filter(self, database, table):
         """
@@ -194,20 +196,20 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         return debug_table
 
     def chunk_wrapper(self, df, database, table, is_sync=False):
-        if is_sync:
-            return df
-
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        if is_db_tbl('manufacture', 'customer'):
-            # 过滤掉name为空的数据
-            # df = df[df['name'].astype(str).str.strip() != '']
+        if is_sync:
+            return df
+        else:
+            if is_db_tbl('manufacture', 'customer'):
+                # 过滤掉name为空的数据
+                # df = df[df['name'].astype(str).str.strip() != '']
 
-            # 将字段name为空的补充为''
-            df['name'] = df['name'].fillna('')
-            pass
-        return df
+                # 将字段name为空的补充为''
+                df['name'] = df['name'].fillna('')
+                pass
+            return df
 
     def table_match_filter(self, database, table):
         if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
