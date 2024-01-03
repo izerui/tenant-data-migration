@@ -39,13 +39,15 @@ class TestTable(unittest.TestCase):
         同步数据
         :return:
         """
-        ent_code = '638334323'
+        # ent_code = '638334323'
+        ent_code = '30edefb6-51af-447d-82cd-07cff070e2a2'
         rds01 = Rds01()
         rds02 = Rds02()
         rds_list = [rds01, rds02]
         for rds in rds_list:
             logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
-            rds.sync_parallel(ent_code, test_data=False, create_structure=True, sync_platform_data=False, sync_tenant_data=False)
+            rds.sync_parallel(ent_code, test_data=False, create_structure=False, sync_platform_data=True,
+                              sync_tenant_data=True)
         pass
 
     # 读取sql，测试转换异常字段类型

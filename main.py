@@ -3,7 +3,13 @@ from usage import Rds01, Rds02
 
 if __name__ == '__main__':
     # 指定账套
-    ent_code = config.get('global', 'ent_code')
+    # 鑫之都
+    #ent_code='638334323'
+    # 深圳安瑞创
+    ent_code='30edefb6-51af-447d-82cd-07cff070e2a2'
+    # 东莞安瑞创
+    #ent_code='4f1ec7fd-74c8-4105-85c0-2cdd44307374'
+
     # 测试模式只同步前10条记录
     test_data = False
     # 是否需要重建库和表结构
