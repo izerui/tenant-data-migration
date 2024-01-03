@@ -1,4 +1,5 @@
 import os
+import platform
 from typing import Iterator, Callable, Generator
 
 import pandas as pd
@@ -9,7 +10,18 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from tqdm import tqdm
 
-from utils import mysqldump_file, mysql_file, execute_command, log_time, logger
+from base import logger, execute_command
+
+if platform.system() == 'Windows':
+    mysqlpump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqlpump.exe')
+    mysqldump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqldump.exe')
+    mysql_file = os.path.join('mysql-client', 'win', 'x64', 'mysql.exe')
+elif platform.system() == 'Darwin':
+    mysqlpump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqlpump')
+    mysqldump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqldump')
+    mysql_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysql')
+else:
+    raise BaseException('暂不支持')
 
 
 class Csv:
@@ -63,13 +75,6 @@ class Mysql:
         # 如果未指定数据库，返回默认连接
         return self.engine
 
-    def get_url(self) -> str:
-        """
-        获取数据库连接串
-        :return: url
-        """
-        return self.url
-
     def execute_query(self, sql, database=None) -> sqlalchemy.engine.cursor.CursorResult:
         """
         执行sql语句并返回指针结果
@@ -99,7 +104,7 @@ class Mysql:
     def execute_updates(self, sqls, database=None, desc=None):
         """
         执行更新或者插入语句集合, 支持通配符
-        :param sql: sql语句
+        :param sqls: sql语句集合
         :return: sqlalchemy.engine.cursor.CursorResult
         """
         sql_bar = tqdm(total=len(sqls), desc=desc)
@@ -137,7 +142,7 @@ class Mysql:
         dataframe = pd.read_sql(f'SELECT * FROM {table}', con=self.get_engine())
         return dataframe
 
-    def get_dataframe_from_sql(self, sql, database=None) -> DataFrame:
+    def get_dataframe_from_sql(self, sql) -> DataFrame:
         """
         从mysql中读取表数据到 dataframe generator
         :param sql: 查询语句
@@ -149,7 +154,7 @@ class Mysql:
         dataframe = dataframe.map(lambda x: x[0] if type(x) is bytes else x)
         return dataframe
 
-    def get_dataframe_chunks_from_sql(self, sql, database=None, chunksize=100000) -> Iterator[DataFrame]:
+    def get_dataframe_chunks_from_sql(self, sql, chunksize=100000) -> Iterator[DataFrame]:
         """
         从mysql中读取表数据到 dataframe generator
         :param sql: 查询语句
@@ -193,7 +198,7 @@ class Mysql:
         :return:
         """
         count = self.execute_query(count_sql, database=database).scalar()
-        chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
+        chunks = self.get_dataframe_chunks_from_sql(query_sql, chunksize=chunksize)
         # 显示进度
         chunks = tqdm(chunks, total=count / chunksize)
         for index, item in enumerate(chunks):
@@ -241,7 +246,7 @@ class Mysql:
         :param table: 数据库表名
         :return:
         """
-        chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
+        chunks = self.get_dataframe_chunks_from_sql(query_sql, chunksize=chunksize)
         for index, item in enumerate(chunks):
             chunk_call(item)
 
@@ -254,7 +259,7 @@ class Mysql:
         # print(f'【执行查询条目数】: \r\n {count_sql}')
         count = self.execute_query(count_sql).scalar()
         # print(f'【条目数】共 {count} 条记录，开始读取数据...')
-        chunks = self.get_dataframe_chunks_from_sql(query_sql, database=database, chunksize=chunksize)
+        chunks = self.get_dataframe_chunks_from_sql(query_sql, chunksize=chunksize)
         # 显示进度
         chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】')
         for index, item in enumerate(chunks):
@@ -637,7 +642,6 @@ class Mysql:
             has_database = self.get_engine().dialect.has_schema(conn, database)
             return has_database
 
-    
     def import_sql_file(self, sql_file, database):
         """
         导入sql文件

@@ -1,9 +1,8 @@
 import os
 import unittest
 
-from sink import Csv, Mysql
+from base import *
 from usage import Rds01, Rds02
-from utils import logger, config
 
 
 class TestTable(unittest.TestCase):
@@ -46,7 +45,7 @@ class TestTable(unittest.TestCase):
         rds_list = [rds01, rds02]
         for rds in rds_list:
             logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
-            rds.sync_parallel(ent_code, is_test=True)
+            rds.sync_parallel(ent_code, test_data=False, create_structure=False, sync_platform_data=False, sync_tenant_data=True)
         pass
 
     # 读取sql，测试转换异常字段类型

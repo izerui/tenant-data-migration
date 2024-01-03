@@ -1,5 +1,5 @@
 from usage import Rds01, Rds02
-from utils import logger, config
+from base import logger, config
 
 if __name__ == '__main__':
     # 指定账套

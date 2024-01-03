@@ -9,12 +9,6 @@ import pandas as pd
 from pandas import DataFrame
 from tqdm import tqdm
 
-__version__ = '2.0.9'
-__all__ = [
-    'log_time', 'logger', 'file_path', 'exe_command', 'BColors', 'str2bool', 'config', 'execute_command',
-    'mysqlpump_file', 'mysql_file', 'mysqldump_file'
-]
-
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 # 禁用 httpx 的日志输出
@@ -127,14 +121,5 @@ def str2bool(v):
 config = ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
 
-
-if platform.system() == 'Windows':
-    mysqlpump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqlpump.exe')
-    mysqldump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqldump.exe')
-    mysql_file = os.path.join('mysql-client', 'win', 'x64', 'mysql.exe')
-elif platform.system() == 'Darwin':
-    mysqlpump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqlpump')
-    mysqldump_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysqldump')
-    mysql_file = os.path.join('mysql-client', 'mac', 'arm64', 'mysql')
-else:
-    raise BaseException('暂不支持')
+# 导出的csv临时目录
+dumps_folder = config.get('global', 'dumps_folder')

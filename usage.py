@@ -1,11 +1,6 @@
 import json
 
-from base import BaseExport, BaseImport, BaseSync
-from sink import Mysql
-from utils import config
-
-# 导出的csv临时目录
-dumps_folder = config.get('global', 'dumps_folder')
+from base import *
 
 # 调试模式下的表名，正式用应该设置为None，指定的话则只处理当前表
 # debug_table = 'form_template_detail'
