@@ -101,7 +101,8 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        df.drop(columns=['id'], inplace=True)
+        if 'id' in df.columns:
+            df['id'] = None
         if is_sync:
             if is_db_tbl('rbac_new', 'ent'):
                 df['name'] = df['name'].apply(lambda x: f'uat.{x}')
@@ -205,7 +206,8 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        df.drop(columns=['id'], inplace=True)
+        if 'id' in df.columns:
+            df['id'] = None
         if is_sync:
             return df
         else:
