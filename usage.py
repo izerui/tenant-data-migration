@@ -147,6 +147,9 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         # 标签打印模版
         if database == 'printer_center' and table == 'printer_template':
             return False
+        # 打印配置
+        if database == 'printer_center' and table == 'element_config':
+            return False
         return super().table_match_filter(database, table)
 
 
