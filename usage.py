@@ -142,14 +142,19 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         :param table: 表名
         :return: True:处理当前表  False:不处理当前表
         """
+        def is_db_tbl(db, tbl):
+            return database == db and table == tbl
+
         if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
         # 标签打印模版
-        if database == 'printer_center' and table == 'printer_template':
+        if is_db_tbl('printer_center', 'printer_template'):
             return False
-        if database == 'form_template' and table == 'element_config':
+        if is_db_tbl('form_template', 'element_config'):
             return False
-        if database == 'form_template' and table == 'form_template_detail':
+        if is_db_tbl('form_template', 'form_template_detail'):
+            return False
+        if is_db_tbl('mrp', 'purge_demand'):
             return False
         return super().table_data_match_filter(database, table)
 
@@ -211,6 +216,9 @@ class Rds02(BaseExport, BaseImport, BaseSync):
             return df
 
     def table_data_match_filter(self, database, table):
-        if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
+        def is_db_tbl(db, tbl):
+            return database == db and table == tbl
+
+        if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table:
             return False
         return super().table_data_match_filter(database, table)
