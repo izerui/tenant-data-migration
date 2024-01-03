@@ -135,7 +135,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
                 df['customer_material_code'] = df['customer_material_code'].fillna('')
             return df
 
-    def table_match_filter(self, database, table):
+    def table_data_match_filter(self, database, table):
         """
         匹配表过滤器，如果返回true则处理，否则跳过当前表继续下一个
         :param database: 数据库
@@ -151,7 +151,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
             return False
         if database == 'form_template' and table == 'form_template_detail':
             return False
-        return super().table_match_filter(database, table)
+        return super().table_data_match_filter(database, table)
 
 
 class Rds02(BaseExport, BaseImport, BaseSync):
@@ -210,7 +210,7 @@ class Rds02(BaseExport, BaseImport, BaseSync):
                 pass
             return df
 
-    def table_match_filter(self, database, table):
+    def table_data_match_filter(self, database, table):
         if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
-        return super().table_match_filter(database, table)
+        return super().table_data_match_filter(database, table)

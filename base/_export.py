@@ -40,8 +40,8 @@ class BaseExport(ExportInterface):
                 continue
 
             # 匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
-            if self.table_match_filter:
-                matcher = self.table_match_filter(database, source_table)
+            if self.table_data_match_filter:
+                matcher = self.table_data_match_filter(database, source_table)
                 if not matcher:
                     continue
 
