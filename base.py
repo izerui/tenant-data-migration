@@ -29,7 +29,7 @@ class BaseExport:
 
     def table_match_filter(self, database, table):
         """
-        匹配表过滤器，如果返回true则继续导出，否则跳过当前表继续下一个
+        匹配表过滤器，如果返回true则处理，否则跳过当前表继续下一个
         :param database: 数据库
         :param table: 表名
         :return: True:处理当前表  False:不处理当前表
