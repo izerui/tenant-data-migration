@@ -204,6 +204,7 @@ class Rds02(BaseExport, BaseImport, BaseSync):
             return database == db and table == tbl
 
         if is_sync:
+            df.drop(columns=['id'], inplace=True)
             return df
         else:
             if is_db_tbl('manufacture', 'customer'):
