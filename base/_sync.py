@@ -184,7 +184,7 @@ class BaseSync(ExportInterface, ImportInterface):
                     self._sync_database_table(database, table, ent_code, test_data=test_data,
                                               sync_platform_data=sync_platform_data, sync_tenant_data=sync_tenant_data)
                 except BaseException as e:
-                    logger.error(f'【{database}.{table} 表同步失败】', e)
+                    logger.error(f'【{database}.{table} 表同步失败】{repr(e)}', e)
 
             # 循环所有表，添加同步任务
             for key in db_map.keys():
