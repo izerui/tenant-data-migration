@@ -141,6 +141,9 @@ class Rds01(BaseExport, BaseImport, BaseSync):
     def table_match_filter(self, database, table):
         if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
+        # 标签打印模版
+        if database == 'printer_center' and table == 'printer_template':
+            return False
         return super().table_match_filter(database, table)
 
 
