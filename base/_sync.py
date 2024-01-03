@@ -6,7 +6,10 @@ from pandas import DataFrame
 from pymysql import DatabaseError, MySQLError
 from tqdm import tqdm
 
-from base import Mysql, logger, ExportInterface, ImportInterface
+from base._export import ExportInterface
+from base._import import ImportInterface
+from base._sink import Mysql
+from base._utils import logger
 
 
 class BaseSync(ExportInterface, ImportInterface):
@@ -160,7 +163,7 @@ class BaseSync(ExportInterface, ImportInterface):
             db_map[f'{database}'] = tables
 
         # 如果需要重建库和表结构
-        if not create_structure:
+        if create_structure:
             # 同步结构
             for database in db_map.keys():
                 # 先重建目标数据库结构

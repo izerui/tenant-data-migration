@@ -1,6 +1,5 @@
 import logging
 import os
-import platform
 import time
 from configparser import ConfigParser
 from subprocess import Popen, PIPE, STDOUT
@@ -119,7 +118,8 @@ def str2bool(v):
 
 
 config = ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
+parent_dir = os.path.dirname(os.path.dirname(__file__))
+config.read(os.path.join(parent_dir, 'config.ini'))
 
 # 导出的csv临时目录
 dumps_folder = config.get('global', 'dumps_folder')

@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 from tqdm import tqdm
 
-from base import logger, execute_command
+from base._utils import logger, execute_command
 
 if platform.system() == 'Windows':
     mysqlpump_file = os.path.join('mysql-client', 'win', 'x64', 'mysqlpump.exe')

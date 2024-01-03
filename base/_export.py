@@ -3,7 +3,9 @@ import os
 import shutil
 from concurrent.futures import as_completed
 
-from base import Mysql, logger, ExportInterface
+from base._utils import logger
+from base._sink import Mysql
+from base._interface import ExportInterface
 
 
 class BaseExport(ExportInterface):

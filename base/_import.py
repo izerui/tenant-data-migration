@@ -1,12 +1,13 @@
 import concurrent
 import os
-from abc import abstractmethod
 from concurrent.futures import as_completed
 
 from pymysql import DatabaseError, MySQLError
 from tqdm import tqdm
 
-from base import Mysql, logger, ImportInterface
+from base._sink import Mysql
+from base._utils import logger
+from base._interface import ImportInterface
 
 
 class BaseImport(ImportInterface):
