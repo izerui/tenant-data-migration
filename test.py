@@ -2,7 +2,8 @@ import os
 import unittest
 
 from base import *
-from usage import Rds01, Rds02
+from rds01 import Rds01
+from rds02 import Rds02
 
 
 class TestTable(unittest.TestCase):

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -123,3 +124,15 @@ config.read(os.path.join(parent_dir, 'config.ini'))
 
 # 导出的csv临时目录
 dumps_folder = config.get('global', 'dumps_folder')
+
+
+def format_json(text):
+    if isinstance(text, float):
+        return None
+    else:
+        text = str(text).replace('\'', '\"')
+        text = str(text).replace(':True', ':true')
+        text = str(text).replace(': True', ': true')
+        text = str(text).replace(':False', ':false')
+        text = str(text).replace(': False', ': false')
+        return json.dumps(json.loads(text))

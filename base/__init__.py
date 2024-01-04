@@ -2,7 +2,7 @@ __version__ = '2.0.9'
 
 __all__ = [
     'Interface', 'BaseExport', 'BaseImport', 'BaseSync', 'Mysql', 'Csv', 'logger',
-    'BColors', 'config', 'exe_command', 'str2bool', 'dumps_folder'
+    'BColors', 'config', 'exe_command', 'str2bool', 'dumps_folder', 'format_json'
 ]
 
 from base._export import *
