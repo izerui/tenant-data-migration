@@ -54,22 +54,6 @@ class BaseExport(ExportInterface):
             if not os.path.exists(os.path.dirname(csv_file)):
                 os.makedirs(os.path.dirname(csv_file))
 
-            # ###########################################################
-            # sql_create_file = os.path.join(self.dumps_folder, database, f'{source_table}.sql')
-            # # sql存在的话先删除文件
-            # if os.path.exists(sql_create_file):
-            #     os.remove(sql_create_file)
-            # # sql目录不存在的话先创建
-            # if not os.path.exists(os.path.dirname(sql_create_file)):
-            #     os.makedirs(os.path.dirname(sql_create_file))
-            #
-            # # 创建表语句写入sql文件
-            # create_sql = self.source.get_table_create_sql(source_table, database=database)
-            # create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
-            # with open(sql_create_file, "w") as file:
-            #     file.write(create_sql)
-            # ############################################################
-
             # 判断表是否包含ent_code字段
             exist_ent_code_column = self.source.exists_table_column(database, source_table, 'ent_code')
 
