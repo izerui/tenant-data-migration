@@ -106,13 +106,6 @@ class BaseSync(ExportInterface, ImportInterface):
             if not matcher:
                 return
 
-        # 读取到数据分批写入到目标表
-        def from_chunk_to_target_table(chunk: DataFrame):
-            chunk = self.chunk_wrapper(chunk, database, table, True)
-            chunk.to_sql(table, schema=database, con=self.target.get_engine(), if_exists='append',
-                         index=False)
-            pass
-
         # 判断表是否包含ent_code字段
         exists_ent_code_column = self.source.exists_table_column(database, table, 'ent_code')
 
@@ -126,6 +119,13 @@ class BaseSync(ExportInterface, ImportInterface):
 
         # 前置处理器获取目标表的索引
         index_alert_sqls = self.return_before_handle_data(database, table)
+
+        # 读取到数据分批写入到目标表
+        def from_chunk_to_target_table(chunk: DataFrame):
+            chunk = self.chunk_wrapper(chunk, database, table, True)
+            chunk.to_sql(table, schema=database, con=self.target.get_engine(), if_exists='append',
+                         index=False)
+            pass
 
         # 测试的话，只同步前10条记录
         if test_data:
