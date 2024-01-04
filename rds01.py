@@ -9,14 +9,16 @@ class Rds01(BaseExport, BaseImport, BaseSync):
 
     def __init__(self):
 
-        # rds01 mysql连接
+        # rds01 配置
         self.rds_host = config.get('source_mysql', 'rds_01_host')
         self.rds_port = config.get('source_mysql', 'rds_01_port')
         self.rds_user = config.get('source_mysql', 'rds_01_user')
         self.rds_pass = config.get('source_mysql', 'rds_01_pass')
 
+        # rds01 连接
         source_rds01 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
-        # rds01 要导入的表
+
+        # rds01 数据库
         databases_rds01 = ['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
                            'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
                            'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
@@ -76,12 +78,12 @@ class Rds01(BaseExport, BaseImport, BaseSync):
 
     def chunk_wrapper(self, df, database, table, is_sync=False):
         """
-        对csv读取的df对象进行二次处理，保证导入顺利
-        :param df: df对象
+        导入数据前，进行的二次包装处理，比如过滤数据
+        :param df: 读取的csv文件到pandas对象
         :param database: 要导入的数据库
-        :param table: 要导入的表
+        :param table: 要导入到的表
         :param is_sync: 是否是同步数据模式(该模式下没有中间商，故部分数据不需要处理)
-        :return: 处理后的df对象
+        :return: pandas DataFrame 对象
         """
 
         def is_db_tbl(db, tbl):

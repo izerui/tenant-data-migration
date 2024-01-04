@@ -9,16 +9,16 @@ class Rds02(BaseExport, BaseImport, BaseSync):
 
     def __init__(self):
 
-        # rds02 mysql连接
+        # rds02 配置
         self.rds_host = config.get('source_mysql', 'rds_02_host')
         self.rds_port = config.get('source_mysql', 'rds_02_port')
         self.rds_user = config.get('source_mysql', 'rds_02_user')
         self.rds_pass = config.get('source_mysql', 'rds_02_pass')
 
-        # rds02 mysql连接
+        # rds02 连接
         source_rds02 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
 
-        # rds02 要导入的库
+        # rds02 数据库
         databases_rds02 = ['manufacture', 'storehouse', 'qc']
 
         # 要导入的目的mysql
