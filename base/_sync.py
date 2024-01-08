@@ -59,7 +59,7 @@ class BaseSync(ExportInterface, ImportInterface):
                         create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
                         table_create_sqls.append(create_sql)
                 if len(table_create_sqls) > 0:
-                    self.target.execute_updates(table_create_sqls, database, '创建目标表...')
+                    self.target.execute_updates(table_create_sqls, database, f'【{database}】创建目标表...')
         except BaseException as e:
             raise MySQLError(f'create error: 【{database}】 {repr(e)}')
 
