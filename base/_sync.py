@@ -57,6 +57,7 @@ class BaseSync(ExportInterface, ImportInterface):
                         create_sql = self.source.get_table_create_sql(table, database)
                         create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
                         create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
+                        create_sql = create_sql.replace('ROW_FORMAT=COMPACT', '')
                         table_create_sqls.append(create_sql)
                 if len(table_create_sqls) > 0:
                     self.target.execute_updates(table_create_sqls, database, f'【{database}】创建目标表...')
