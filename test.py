@@ -58,9 +58,12 @@ class TestTable(unittest.TestCase):
         sync_platform_data = True
         # 是否同步租户数据
         sync_tenant_data = True
-        rds01 = Rds01(databases=['test'])
-        # rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
-        rds_list = [rds01]
+        rds01 = Rds01(databases=['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
+                             'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
+                             'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
+                             'unicom', 'wx_applet', 'test'])
+        rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
+        rds_list = [rds01, rds02]
         for rds in rds_list:
             logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
             rds.sync_parallel(ent_code, test_data=test_data, create_structure=create_structure,
