@@ -170,15 +170,15 @@ class BaseSync(ExportInterface, ImportInterface):
             tbl_count += len(tables)
             db_map[f'{database}'] = tables
 
-        # 删除数据库
-        if drop_database:
-            for database in db_map.keys():
+        for database in db_map.keys():
+            # 删除数据库
+            if drop_database:
                 # 先重建目标数据库结构
                 logger.info(f'【{database}】删除重建。。。')
                 self.target.execute_update(f'drop database if exists {database}')
-        # 如果库或者表不存在则创建
-        self.__create_database_if_not_exists(database)
-        self.__create_database_tables_if_not_exists(database, db_map[database])
+            # 如果库或者表不存在则创建
+            self.__create_database_if_not_exists(database)
+            self.__create_database_tables_if_not_exists(database, db_map[database])
 
         # 同步数据
         import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的数据处理进度')
