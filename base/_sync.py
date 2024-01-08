@@ -150,13 +150,13 @@ class BaseSync(ExportInterface, ImportInterface):
         self.after_handle_data(database, table, index_alert_sqls)
         pass
 
-    def sync_parallel(self, ent_codes, test_data=False, create_structure=False, sync_platform_data=True,
+    def sync_parallel(self, ent_codes, test_data=False, drop_database=False, sync_platform_data=True,
                       sync_tenant_data=True):
         """
         并行同步实例下的多个数据库表数据
         :param ent_codes: 账套列表
         :param test_data: 测试模式 只同步前10条记录
-        :param create_structure: 是否需要重建库和表结构
+        :param drop_database: 是否删除数据库
         :param sync_platform_data: 是否同步平台表数据
         :param sync_tenant_data: 是否同步租户数据
         :return:
@@ -170,9 +170,8 @@ class BaseSync(ExportInterface, ImportInterface):
             tbl_count += len(tables)
             db_map[f'{database}'] = tables
 
-        # 如果需要重建库和表结构
-        if create_structure:
-            # 同步结构
+        # 删除数据库
+        if drop_database:
             for database in db_map.keys():
                 # 先重建目标数据库结构
                 logger.info(f'【{database}】删除重建。。。')

@@ -8,8 +8,8 @@ if __name__ == '__main__':
 
     # 测试模式只同步前10条记录
     test_data = False
-    # 是否需要重建库和表结构
-    create_structure = False
+    # 是否删除数据库
+    drop_database = False
     # 是否同步平台表数据
     sync_platform_data = False
     # 是否同步租户数据
@@ -23,6 +23,6 @@ if __name__ == '__main__':
     rds_list = [rds01, rds02]
     for rds in rds_list:
         logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
-        rds.sync_parallel(ent_codes, test_data=test_data, create_structure=create_structure,
+        rds.sync_parallel(ent_codes, test_data=test_data, drop_database=drop_database,
                           sync_platform_data=sync_platform_data,
                           sync_tenant_data=sync_tenant_data)
