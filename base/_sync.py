@@ -30,9 +30,10 @@ class BaseSync(ExportInterface, ImportInterface):
         :return:
         """
         try:
-            db_create_sql = self.source.get_database_create_sql(database)
-            db_create_sql = db_create_sql.replace('CREATE DATABASE', 'CREATE DATABASE IF NOT EXISTS')
-            self.target.execute_update(db_create_sql)
+            if not self.target.exists_database(database):
+                db_create_sql = self.source.get_database_create_sql(database)
+                db_create_sql = db_create_sql.replace('CREATE DATABASE', 'CREATE DATABASE IF NOT EXISTS')
+                self.target.execute_update(db_create_sql)
         except BaseException as e:
             raise DatabaseError(f'【{database}】错误: {repr(e)}')
 
@@ -52,11 +53,12 @@ class BaseSync(ExportInterface, ImportInterface):
                 # 重建目标表
                 table_create_sqls = []
                 for table in tables:
-                    create_sql = self.source.get_table_create_sql(table, database)
-                    create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
-                    create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
-                    table_create_sqls.append(create_sql)
-                self.target.execute_updates(table_create_sqls, database, '创建目标表...')
+                    if not self.target.exists_table(database, table):
+                        create_sql = self.source.get_table_create_sql(table, database)
+                        create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
+                        create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
+                        table_create_sqls.append(create_sql)
+                        self.target.execute_updates(table_create_sqls, database, '创建目标表...')
         except BaseException as e:
             raise MySQLError(f'create error: 【{database}】 {repr(e)}')
 
@@ -171,8 +173,9 @@ class BaseSync(ExportInterface, ImportInterface):
                 # 先重建目标数据库结构
                 logger.info(f'【{database}】删除重建。。。')
                 self.target.execute_update(f'drop database if exists {database}')
-                self.__create_database_if_not_exists(database)
-                self.__create_database_tables_if_not_exists(database, db_map[database])
+        # 如果库或者表不存在则创建
+        self.__create_database_if_not_exists(database)
+        self.__create_database_tables_if_not_exists(database, db_map[database])
 
         # 同步数据
         import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的数据处理进度')
