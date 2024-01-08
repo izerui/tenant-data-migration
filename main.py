@@ -4,7 +4,7 @@ from rds02 import Rds02
 
 if __name__ == '__main__':
     # 指定账套
-    ent_codes = ['1a92f2b4-08d3-4722-a733-eef69d55ecf4', '4f1ec7fd-74c8-4105-85c0-2cdd44307374']
+    ent_codes = ['638334323', '736482969', '333367878', 'cefeeed1-d198-4214-b1a2-9277e9f78655']
 
     # 测试模式只同步前10条记录
     test_data = False
