@@ -134,10 +134,10 @@ class BaseSync(ExportInterface, ImportInterface):
         else:
             # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
             if not exists_ent_code_column:
-                self.target.execute_update(f'truncate table `{database}`.`{table}`')
+                self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
                 self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
             else:
-                self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'")
+                self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'", database=database)
                 query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
                 self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
