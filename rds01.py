@@ -7,7 +7,7 @@ debug_table = None
 
 class Rds01(BaseExport, BaseImport, BaseSync):
 
-    def __init__(self):
+    def __init__(self, databases: list[str]):
 
         # rds01 配置
         self.rds_host = config.get('source_mysql', 'rds_01_host')
@@ -19,10 +19,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         source_rds01 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
 
         # rds01 数据库
-        databases_rds01 = ['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
-                           'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
-                           'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
-                           'unicom', 'wx_applet', 'test']
+        databases_rds01 = databases
 
         # 要导入的目的mysql
         self.target_host = config.get('target_mysql', 'host')
