@@ -53,14 +53,14 @@ class TestTable(unittest.TestCase):
         # 测试模式只同步前10条记录
         test_data = False
         # 是否需要重建库和表结构
-        create_structure = True
+        create_structure = False
         # 是否同步平台表数据
         sync_platform_data = True
         # 是否同步租户数据
         sync_tenant_data = True
         rds01 = Rds01(databases=['test'])
-        rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
-        rds_list = [rds01, rds02]
+        # rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
+        rds_list = [rds01]
         for rds in rds_list:
             logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
             rds.sync_parallel(ent_code, test_data=test_data, create_structure=create_structure,

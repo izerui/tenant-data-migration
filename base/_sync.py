@@ -58,7 +58,8 @@ class BaseSync(ExportInterface, ImportInterface):
                         create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
                         create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
                         table_create_sqls.append(create_sql)
-                        self.target.execute_updates(table_create_sqls, database, '创建目标表...')
+                if len(table_create_sqls) > 0:
+                    self.target.execute_updates(table_create_sqls, database, '创建目标表...')
         except BaseException as e:
             raise MySQLError(f'create error: 【{database}】 {repr(e)}')
 
@@ -125,8 +126,9 @@ class BaseSync(ExportInterface, ImportInterface):
         # 读取到数据分批写入到目标表
         def from_chunk_to_target_table(chunk: DataFrame):
             chunk = self.chunk_wrapper(chunk, database, table, True)
-            chunk.to_sql(table, schema=database, con=self.target.get_engine(), if_exists='append',
-                         index=False)
+            if len(chunk) > 0:
+                chunk.to_sql(table, schema=database, con=self.target.get_engine(), if_exists='append',
+                             index=False)
             pass
 
         # 测试的话，只同步前10条记录
@@ -139,7 +141,8 @@ class BaseSync(ExportInterface, ImportInterface):
                 self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
                 self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
             else:
-                self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'", database=database)
+                self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'",
+                                           database=database)
                 query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
                 self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
