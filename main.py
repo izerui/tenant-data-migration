@@ -1,4 +1,4 @@
-from base import logger, config
+from base import logger
 from rds01 import Rds01
 from rds02 import Rds02
 
