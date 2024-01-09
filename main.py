@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # 是否删除数据库
     drop_database = False
     # 是否同步平台表数据
-    sync_platform_data = True
+    sync_platform_data = False
     # 是否同步租户数据
     sync_tenant_data = True
 
