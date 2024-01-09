@@ -148,4 +148,6 @@ class Rds01(BaseExport, BaseImport, BaseSync):
             return False
         if 'batch_job' in table or 'batch_step' in table:
             return False
+        if is_db_tbl('cloud_finance', 'pre_voucher_detail'):
+            return False
         return super().table_data_match_filter(database, table)
