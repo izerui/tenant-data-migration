@@ -87,7 +87,8 @@ class BaseSync(ExportInterface, ImportInterface):
                 self.target.execute_update(index_alert, database)
         pass
 
-    def _sync_database_table(self, database, table, ent_codes, test_data=False, sync_platform_data=True,
+    def _sync_database_table(self, database, table, ent_codes, test_data=False, delete_data=False,
+                             sync_platform_data=True,
                              sync_tenant_data=True):
         """
         同步源库下的表数据到目标库下
@@ -95,6 +96,7 @@ class BaseSync(ExportInterface, ImportInterface):
         :param table: 表
         :param ent_codes: 账套编号列表
         :param test_data: 测试模式 只同步前10条记录
+        :param delete_data: 是否删除原有的租户数据或者平台数据
         :param sync_platform_data: 是否同步平台表数据
         :param sync_tenant_data: 是否同步租户数据
         :return:
@@ -139,24 +141,27 @@ class BaseSync(ExportInterface, ImportInterface):
         else:
             # 不包含ent_code字段，则导出全表， 否则导出ent_code条件内数据
             if not exists_ent_code_column:
-                self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
+                if delete_data:
+                    self.target.execute_update(f'truncate table `{database}`.`{table}`', database=database)
                 self.source.from_table_to_call_no_processor(database, table, from_chunk_to_target_table)
             else:
                 for ent_code in ent_codes:
-                    self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'",
-                                               database=database)
+                    if delete_data:
+                        self.target.execute_update(f"delete from `{database}`.`{table}` where ent_code = '{ent_code}'",
+                                                   database=database)
                     query_sql = f"/** 导出数据 **/ select * from `{database}`.`{table}` where ent_code = '{ent_code}'"
                     self.source.from_sql_to_call_no_processor(query_sql, from_chunk_to_target_table, database=database)
 
         self.after_handle_data(database, table, index_alert_sqls)
         pass
 
-    def sync_parallel(self, ent_codes, test_data=False, drop_database=False, sync_platform_data=True,
+    def sync_parallel(self, ent_codes, test_data=False, delete_data=False, drop_database=False, sync_platform_data=True,
                       sync_tenant_data=True):
         """
         并行同步实例下的多个数据库表数据
         :param ent_codes: 账套列表
         :param test_data: 测试模式 只同步前10条记录
+        :param delete_data: 是否删除原有的租户数据或者平台数据
         :param drop_database: 是否删除数据库
         :param sync_platform_data: 是否同步平台表数据
         :param sync_tenant_data: 是否同步租户数据
@@ -190,7 +195,7 @@ class BaseSync(ExportInterface, ImportInterface):
             def sync_database(database, table):
                 try:
                     # 开始同步数据
-                    self._sync_database_table(database, table, ent_codes, test_data=test_data,
+                    self._sync_database_table(database, table, ent_codes, test_data=test_data,delete_data=delete_data,
                                               sync_platform_data=sync_platform_data, sync_tenant_data=sync_tenant_data)
                 except BaseException as e:
                     logger.error(f'\r\t【{database}.{table} 表同步失败】{repr(e)}')
