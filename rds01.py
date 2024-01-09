@@ -146,4 +146,6 @@ class Rds01(BaseExport, BaseImport, BaseSync):
             return False
         if is_db_tbl('mrp', 'purge_demand'):
             return False
+        if 'batch_job' in table:
+            return False
         return super().table_data_match_filter(database, table)

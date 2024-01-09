@@ -17,8 +17,8 @@ if __name__ == '__main__':
     # 是否同步租户数据
     sync_tenant_data = True
 
-    rds01 = Rds01(databases=['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development',
-                             'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center',
+    rds01 = Rds01(databases=['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development', 'billing',
+                             'dictionary', 'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center', 'cloud_finance',
                              'printer_center', 'purchase', 'rbac_new', 'supplier', 'system_setting', 'ufile_store',
                              'unicom', 'wx_applet', 'test'])
     rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
