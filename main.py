@@ -10,7 +10,7 @@ if __name__ == '__main__':
     test_data = False
     # 是否删除原来的租户数据或者平台数据
     delete_data = False
-    # 是否删除数据库
+    # 是否同步前删除数据库
     drop_database = False
     # 是否同步平台表数据
     sync_platform_data = False
