@@ -9,7 +9,7 @@ if __name__ == '__main__':
     # 测试模式只同步前10条记录
     test_data = False
     # 是否删除原来的租户数据或者平台数据
-    delete_data = True
+    delete_data = False
     # 是否删除数据库
     drop_database = False
     # 是否同步平台表数据
