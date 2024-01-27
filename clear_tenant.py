@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from base import Mysql, config
 
 if __name__ == '__main__':
@@ -10,9 +12,20 @@ if __name__ == '__main__':
     user = config.get('target_mysql', 'user')
     password = config.get('target_mysql', 'pass')
     mysql = Mysql(host, port, user, password)
+
+    print('加入待处理列表:')
+    list = []
     for db in databases:
         tables = mysql.list_tables(database=db)
         for table in tables:
             is_tenant = mysql.exists_table_column(database=db, table=table, column='ent_code')
             if is_tenant:
-                mysql.execute_update(f'truncate table {table}', database=db)
+                db_table = f'`{db}`.`{table}`'
+                list.append(db_table)
+                print(db_table)
+
+
+    bar = tqdm(total=len(list), desc='清除租户数据。。。')
+    for db_table in list:
+        mysql.execute_update(f'truncate table {db_table}')
+        bar.update(1)
