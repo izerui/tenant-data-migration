@@ -135,7 +135,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
+        if table.endswith('_bak') or '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
         # 标签打印模版
         if is_db_tbl('printer_center', 'printer_template'):
@@ -145,6 +145,10 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         if is_db_tbl('form_template', 'form_template_detail'):
             return False
         if is_db_tbl('mrp', 'purge_demand'):
+            return False
+        if is_db_tbl('mrp', 'demand_log'):
+            return False
+        if is_db_tbl('development', 'bom_bak'):
             return False
         if 'batch_job' in table or 'batch_step' in table:
             return False
