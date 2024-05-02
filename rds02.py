@@ -49,9 +49,13 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        if 'id' in df.columns:
-            df['id'] = None
+        # 除了ent表，其他表将id置为空，因为ent表的id在bom中用上了，可能bom重构后就不需要了
+        if not table == 'ent':
+            if 'id' in df.columns:
+                df['id'] = None
         if is_sync:
+            if is_db_tbl('platform_rbac', 'ent'):
+                df['name'] = df['name'].apply(lambda x: f'uat.{x}')
             return df
         else:
             if is_db_tbl('manufacture', 'customer'):
