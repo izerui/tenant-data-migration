@@ -10,18 +10,16 @@ if __name__ == '__main__':
     # 测试模式只同步前10条记录
     test_data = False
     # 是否删除原来的租户数据或者平台数据
-    delete_data = False
+    delete_data = True
     # 是否同步前删除数据库
-    drop_database = True
+    drop_database = False
     # 是否同步平台表数据
     sync_platform_data = True
     # 是否同步租户数据
     sync_tenant_data = True
 
-    rds01 = Rds01(databases=['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development', 'billing',
-                             'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center', 'cloud_finance',
-                             'purchase', 'supplier', 'system_setting'])
-    rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc', 'platform_rbac', 'platform_dictionary'])
+    rds01 = Rds01(databases=[])
+    rds02 = Rds02(databases=['qc'])
     rds_list = [rds01, rds02]
     for rds in rds_list:
         logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')

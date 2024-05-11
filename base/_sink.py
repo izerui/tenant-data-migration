@@ -236,7 +236,7 @@ class Mysql:
         # print(f'共 {count} 条记录，开始读取数据...')
         chunks = self.get_dataframe_chunks_from_table(database, table, chunksize=chunksize)
         # 显示进度
-        chunks = tqdm(chunks, total=count / chunksize, desc=f'{table} 表数据处理进度')
+        chunks = tqdm(chunks, total=count / chunksize, desc=f'{table} 表from_table_to_call数据处理进度')
         for index, item in enumerate(chunks):
             chunk_call(item)
 
@@ -261,7 +261,7 @@ class Mysql:
         # print(f'【条目数】共 {count} 条记录，开始读取数据...')
         chunks = self.get_dataframe_chunks_from_sql(query_sql, chunksize=chunksize)
         # 显示进度
-        chunks = tqdm(chunks, total=count / chunksize, desc=f'【数据处理进度】')
+        chunks = tqdm(chunks, total=count / chunksize, desc=f'【from_sql_to_call数据处理进度】')
         for index, item in enumerate(chunks):
             # 替换bit类型的 b'\x00' 值为0
             # item = item.map(lambda x: x[0] if type(x) is bytes else x)

@@ -53,8 +53,6 @@ class BaseSync(ExportInterface, ImportInterface):
                 # 重建目标表
                 table_create_sqls = []
                 for table in tables:
-                    if not self.table_data_match_filter(database, table):
-                        continue
                     if not self.target.exists_table(database, table):
                         create_sql = self.source.get_table_create_sql(table, database)
                         create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
@@ -189,7 +187,7 @@ class BaseSync(ExportInterface, ImportInterface):
             self.__create_database_tables_if_not_exists(database, db_map[database])
 
         # 同步数据
-        import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的数据处理进度')
+        import_bar = tqdm(total=tbl_count, desc=f'实例【{self.get_name()}】的多线程数据同步处理进度')
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             futures = []
 
@@ -201,6 +199,8 @@ class BaseSync(ExportInterface, ImportInterface):
                                               sync_platform_data=sync_platform_data, sync_tenant_data=sync_tenant_data)
                 except BaseException as e:
                     logger.error(f'\r\t【{database}.{table} 表同步失败】{repr(e)}')
+                finally:
+                    import_bar.update(1)
 
             # 循环所有表，添加同步任务
             for key in db_map.keys():
@@ -209,5 +209,6 @@ class BaseSync(ExportInterface, ImportInterface):
                     # 添加任务，并发执行
                     future = pool.submit(sync_database, key, table)
                     futures.append(future)
-            for future in as_completed(futures):  # 并发执行
-                import_bar.update(1)
+            pool.shutdown(True)
+            # for future in as_completed(futures):  # 并发等待执行完成
+            #     pass
