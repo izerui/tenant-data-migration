@@ -209,6 +209,6 @@ class BaseSync(ExportInterface, ImportInterface):
                     # 添加任务，并发执行
                     future = pool.submit(sync_database, key, table)
                     futures.append(future)
-            # pool.shutdown(True)
-            for future in as_completed(futures):  # 并发等待执行完成
-                pass
+            pool.shutdown(True)
+            # for future in as_completed(futures):  # 并发等待执行完成
+            #     pass
