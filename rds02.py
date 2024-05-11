@@ -71,6 +71,6 @@ class Rds02(BaseExport, BaseImport, BaseSync):
         def is_db_tbl(db, tbl):
             return database == db and table == tbl
 
-        if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table:
+        if '_bakup_' in table or '_20231203' in table or '_0601' in table or '_copy1' in table:
             return False
         return super().table_data_match_filter(database, table)

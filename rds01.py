@@ -154,7 +154,7 @@ class Rds01(BaseExport, BaseImport, BaseSync):
             return database == db and table == tbl
 
         if table.endswith(
-                '_bak') or '_bakup_' in table or '_20231203' in table or '_0601' in table or '_backups' in table or '_copy1' in table or 'demand_result_finished' == table:
+                '_bak') or '_bakup_' in table or '_20231203' in table or '_0601' in table or '_copy1' in table or 'demand_result_finished' == table:
             return False
         # 不同步spring batch 相关表
         if table.startswith('batch_job_') or table.startswith('batch_step_'):
