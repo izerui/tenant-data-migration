@@ -18,6 +18,15 @@ class ExportInterface(Interface):
     """
     __metaclass__ = ABCMeta  # 指定这是一个抽象类
 
+    def table_ddl_match_filter(self, database, table):
+        """
+        匹配表过滤器，如果返回true则处理表结构，否则跳过当前表继续下一个
+        :param database: 数据库
+        :param table: 表名
+        :return: True:处理当前表结构  False:不处理当前表结构
+        """
+        return True
+
     def table_data_match_filter(self, database, table):
         """
         匹配表过滤器，如果返回true则处理数据，否则跳过当前表继续下一个

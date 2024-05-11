@@ -53,6 +53,8 @@ class BaseSync(ExportInterface, ImportInterface):
                 # 重建目标表
                 table_create_sqls = []
                 for table in tables:
+                    if not self.table_ddl_match_filter(database, table):
+                        continue
                     if not self.target.exists_table(database, table):
                         create_sql = self.source.get_table_create_sql(table, database)
                         create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')

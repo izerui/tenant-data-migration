@@ -55,6 +55,7 @@ class BaseImport(ImportInterface):
             create_sql = self.source.get_table_create_sql(table, database)
             create_sql = create_sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
             create_sql = create_sql.replace('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci')
+            logger.info(create_sql)
             self.target.execute_update(create_sql, database)
         except BaseException as e:
             raise MySQLError(f'create table error: 【{database}.{table}】 {repr(e)}')
