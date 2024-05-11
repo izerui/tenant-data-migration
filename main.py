@@ -1,4 +1,5 @@
 from base import logger
+from platform02 import Platform02
 from rds01 import Rds01
 from rds02 import Rds02
 
@@ -20,7 +21,8 @@ if __name__ == '__main__':
 
     rds01 = Rds01(databases=['cloud_finance'])
     rds02 = Rds02(databases=[])
-    rds_list = [rds01, rds02]
+    platform02 = Platform02(databases=[])
+    rds_list = [rds01, rds02, platform02]
     for rds in rds_list:
         logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
         rds.sync_parallel(ent_codes,
