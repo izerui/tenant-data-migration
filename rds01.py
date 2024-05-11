@@ -10,10 +10,10 @@ class Rds01(BaseExport, BaseImport, BaseSync):
     def __init__(self, databases: list[str]):
 
         # rds01 配置
-        self.rds_host = config.get('source_mysql', 'rds_01_host')
-        self.rds_port = config.get('source_mysql', 'rds_01_port')
-        self.rds_user = config.get('source_mysql', 'rds_01_user')
-        self.rds_pass = config.get('source_mysql', 'rds_01_pass')
+        self.rds_host = config.get('rds01_mysql', 'host')
+        self.rds_port = config.get('rds01_mysql', 'port')
+        self.rds_user = config.get('rds01_mysql', 'user')
+        self.rds_pass = config.get('rds01_mysql', 'pass')
 
         # rds01 连接
         source_rds01 = Mysql(self.rds_host, self.rds_port, self.rds_user, self.rds_pass)
@@ -22,10 +22,10 @@ class Rds01(BaseExport, BaseImport, BaseSync):
         databases_rds01 = databases
 
         # 要导入的目的mysql
-        self.target_host = config.get('target_mysql', 'host')
-        self.target_port = config.get('target_mysql', 'port')
-        self.target_user = config.get('target_mysql', 'user')
-        self.target_pass = config.get('target_mysql', 'pass')
+        self.target_host = config.get('erp_uat_mysql', 'host')
+        self.target_port = config.get('erp_uat_mysql', 'port')
+        self.target_user = config.get('erp_uat_mysql', 'user')
+        self.target_pass = config.get('erp_uat_mysql', 'pass')
         target = Mysql(self.target_host, self.target_port, self.target_user, self.target_pass)
 
         # 初始化导出对象

@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # 是否同步租户数据
     sync_tenant_data = True
 
-    rds01 = Rds01(databases=['cloud_finance'])
+    rds01 = Rds01(databases=['purchase'])
     rds02 = Rds02(databases=[])
     platform02 = Platform02(databases=[])
     rds_list = [rds01, rds02, platform02]
