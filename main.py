@@ -6,7 +6,7 @@ from rds02 import Rds02
 if __name__ == '__main__':
     # 指定账套
     # ent_codes = ['638334323', '736482969', '333367878', 'cefeeed1-d198-4214-b1a2-9277e9f78655', '30edefb6-51af-447d-82cd-07cff070e2a2', '4f1ec7fd-74c8-4105-85c0-2cdd44307374']
-    ent_codes = ['4f1ec7fd-74c8-4105-85c0-2cdd44307374']
+    ent_codes = ['189eb2c3-caf9-48ff-84d7-574cbfd1d1fa']
 
     # 测试模式只同步前10条记录
     test_data = False
@@ -15,13 +15,15 @@ if __name__ == '__main__':
     # 是否同步前删除数据库
     drop_database = False
     # 是否同步平台表数据
-    sync_platform_data = True
+    sync_platform_data = False
     # 是否同步租户数据
     sync_tenant_data = True
 
-    rds01 = Rds01(databases=['purchase'])
-    rds02 = Rds02(databases=[])
-    platform02 = Platform02(databases=[])
+    rds01 = Rds01(databases=['cloud_sale', 'crm', 'customer_supply', 'data_authority', 'development', 'billing',
+                             'form_template', 'freeze', 'hr', 'hrmis', 'mrp', 'price_center', 'cloud_finance',
+                             'purchase', 'supplier', 'system_setting'])
+    rds02 = Rds02(databases=['manufacture', 'storehouse', 'qc'])
+    platform02 = Platform02(databases=['platform_rbac', 'platform_dictionary'])
     rds_list = [rds01, rds02, platform02]
     for rds in rds_list:
         logger.info(f'【开始同步 {rds.get_name()}】准备数据。。。')
